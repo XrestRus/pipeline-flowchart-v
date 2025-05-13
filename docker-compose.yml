@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Next.js приложение
+  app:
+    image: node:20-alpine
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=3306
+      - DATABASE_USER=pipeline_user
+      - DATABASE_PASSWORD=pipeline_password
+      - DATABASE_NAME=pipeline_db
+    depends_on:
+      - db
+    networks:
+      - app-network
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "npm i && npm run dev"
+
+  # MariaDB
+  db:
+    image: mariadb:10.11
+    restart: always
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=pipeline_db
+      - MYSQL_USER=pipeline_user
+      - MYSQL_PASSWORD=pipeline_password
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  # phpMyAdmin для удобства управления БД
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=root
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -9,6 +9,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, Save, X, Trash, ArrowDown, ArrowUp, ArrowRight } from "lucide-react"
 
+interface CompanyWithId {
+  id: number;
+  name: string;
+  comment: string;
+}
+
 interface NodeModalProps {
   isOpen: boolean
   onClose: () => void
@@ -17,18 +23,18 @@ interface NodeModalProps {
   userCompanies: Record<
     string,
     {
-      waiting: { companies: string[]; comments: string[] }
-      dropped: { companies: string[]; comments: string[] }
+      waiting: { companies: CompanyWithId[] }
+      dropped: { companies: CompanyWithId[] }
     }
   >
   onUpdateCompany: (
     nodeId: string,
     status: "waiting" | "dropped",
     index: number,
-    company: string,
+    name: string,
     comment: string,
   ) => void
-  onAddCompany: (nodeId: string, status: "waiting" | "dropped", company: string, comment: string) => void
+  onAddCompany: (nodeId: string, status: "waiting" | "dropped", name: string, comment: string) => void
   onDeleteCompany: (nodeId: string, status: "waiting" | "dropped", index: number) => void
   onMoveCompany: (
     fromNodeId: string,
@@ -64,18 +70,16 @@ export default function NodeModal({
   if (!nodeId) return null
 
   const userData = userCompanies[nodeId] || {
-    waiting: { companies: [], comments: [] },
-    dropped: { companies: [], comments: [] },
+    waiting: { companies: [] },
+    dropped: { companies: [] },
   }
 
   const mergedData = {
     waiting: {
       companies: [...userData.waiting.companies],
-      comments: [...userData.waiting.comments],
     },
     dropped: {
       companies: [...userData.dropped.companies],
-      comments: [...userData.dropped.comments],
     },
   }
 
@@ -152,7 +156,7 @@ export default function NodeModal({
               </TableHeader>
               <TableBody>
                 {mergedData.waiting.companies.map((company, index) => {
-                  const comment = mergedData.waiting.comments[index] || ""
+                  const comment = company.comment || ""
                   const isEditing = editingRow?.status === "waiting" && editingRow?.index === index
 
                   return (
@@ -165,7 +169,7 @@ export default function NodeModal({
                             className="w-full"
                           />
                         ) : (
-                          company
+                          company.name
                         )}
                       </TableCell>
                       <TableCell>
@@ -196,7 +200,7 @@ export default function NodeModal({
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => handleEdit(index, "waiting", company, comment)}
+                                onClick={() => handleEdit(index, "waiting", company.name, comment)}
                                 title="Редактировать"
                               >
                                 <Edit className="h-4 w-4" />
@@ -278,7 +282,7 @@ export default function NodeModal({
               </TableHeader>
               <TableBody>
                 {mergedData.dropped.companies.map((company, index) => {
-                  const comment = mergedData.dropped.comments[index] || ""
+                  const comment = company.comment || ""
                   const isEditing = editingRow?.status === "dropped" && editingRow?.index === index
 
                   return (
@@ -291,7 +295,7 @@ export default function NodeModal({
                             className="w-full"
                           />
                         ) : (
-                          company
+                          company.name
                         )}
                       </TableCell>
                       <TableCell>
@@ -322,7 +326,7 @@ export default function NodeModal({
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => handleEdit(index, "dropped", company, comment)}
+                                onClick={() => handleEdit(index, "dropped", company.name, comment)}
                                 title="Редактировать"
                               >
                                 <Edit className="h-4 w-4" />

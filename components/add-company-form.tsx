@@ -11,24 +11,24 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface AddCompanyFormProps {
   nodeId: string
-  onAddCompany: (nodeId: string, status: "waiting" | "dropped", company: string, comment: string) => void
+  onAddCompany: (nodeId: string, status: "waiting" | "dropped", name: string, comment: string) => void
   defaultStatus?: "waiting" | "dropped"
 }
 
 export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "waiting" }: AddCompanyFormProps) {
-  const [company, setCompany] = useState("")
+  const [name, setName] = useState("")
   const [comment, setComment] = useState("")
   const [status, setStatus] = useState<"waiting" | "dropped">(defaultStatus)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (company.trim() === "") return
+    if (name.trim() === "") return
 
-    onAddCompany(nodeId, status, company, comment)
+    onAddCompany(nodeId, status, name, comment)
 
     // Reset form
-    setCompany("")
+    setName("")
     setComment("")
   }
 
@@ -38,8 +38,8 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
         <Label htmlFor="company-name">Название компании</Label>
         <Input
           id="company-name"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Введите название компании"
           required
         />

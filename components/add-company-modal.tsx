@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 interface AddCompanyModalProps {
   isOpen: boolean
   onClose: () => void
-  onAddCompany: (company: string, comment: string) => void
+  onAddCompany: (name: string, comment: string) => void
 }
 
 export default function AddCompanyModal({ isOpen, onClose, onAddCompany }: AddCompanyModalProps) {

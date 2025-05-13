@@ -1,3 +1,3 @@
 # Установка
-- `npm run i`
+- `npm i`
 - `npm run dev`

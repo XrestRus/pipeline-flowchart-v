@@ -6,7 +6,7 @@ services:
     image: node:20-alpine
     restart: always
     ports:
-      - "3000:3000"
+      - "8083:3000"
     environment:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
@@ -34,8 +34,6 @@ services:
       - MYSQL_DATABASE=pipeline_db
       - MYSQL_USER=pipeline_user
       - MYSQL_PASSWORD=pipeline_password
-    ports:
-      - "3306:3306"
     networks:
       - app-network
 
@@ -44,7 +42,7 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     ports:
-      - "8080:80"
+      - "8084:80"
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306

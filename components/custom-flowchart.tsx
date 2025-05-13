@@ -28,7 +28,7 @@ const VERTICAL_GAP = 60
 export default function CustomFlowchart({ companyCounts, selectedNode, onNodeClick }: FlowchartProps) {
   // Calculate SVG dimensions
   const svgWidth = 800
-  const svgHeight = 800
+  const svgHeight = 1200
 
   // Center point for the main vertical flow
   const centerX = svgWidth / 2

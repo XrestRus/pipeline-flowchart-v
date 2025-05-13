@@ -12,7 +12,6 @@ const nextConfig = {
   },
   output: 'standalone',
   reactStrictMode: true,
-  swcMinify: true,
   env: {
     DATABASE_HOST: process.env.DATABASE_HOST || 'localhost',
     DATABASE_PORT: process.env.DATABASE_PORT || '3306',

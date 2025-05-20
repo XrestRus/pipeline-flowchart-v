@@ -3,6 +3,28 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import * as db from '@/lib/db';
+import { jwtVerify } from 'jose';
+
+// Функция для получения данных пользователя из токена
+async function getUserFromToken(request: NextRequest): Promise<number | null> {
+  try {
+    // Получаем токен из cookie
+    const token = request.cookies.get('auth-token')?.value;
+    
+    if (!token) {
+      return null;
+    }
+    
+    // Проверяем JWT токен
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-at-least-32-chars-long');
+    const { payload } = await jwtVerify(token, secret);
+    
+    return payload.userId as number;
+  } catch (error) {
+    console.error('Ошибка получения данных пользователя:', error);
+    return null;
+  }
+}
 
 /**
  * Получение списка компаний
@@ -36,7 +58,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, nodeId, status, comment } = body;
+    const { name, nodeId, status, comment, docLink, tenderLink } = body;
+    
+    // Получаем ID пользователя из токена
+    const userId = await getUserFromToken(request);
     
     // Валидация
     if (!name || !nodeId || !status) {
@@ -50,7 +75,10 @@ export async function POST(request: NextRequest) {
       name,
       nodeId,
       status,
-      comment || ''
+      comment || '',
+      userId,
+      docLink || null,
+      tenderLink || null
     );
     
     return NextResponse.json(

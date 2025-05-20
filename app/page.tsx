@@ -178,7 +178,10 @@ export default function Home() {
     nodeId: string,
     status: "waiting" | "dropped",
     name: string,
-    comment: string
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
   ) => {
     try {
       // Отправляем запрос на API для сохранения компании в БД
@@ -187,7 +190,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -216,6 +219,25 @@ export default function Home() {
           },
         };
       });
+      
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+          
+          try {
+            await fetch(`/api/companies/${newCompanyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
     } catch (error) {
       console.error("Error adding company:", error);
       // Можно добавить уведомление об ошибке для пользователя
@@ -224,7 +246,10 @@ export default function Home() {
 
   const handleAddCompanyToBeginning = async (
     name: string,
-    comment: string
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
   ) => {
     // Add to the "selected" node by default
     const nodeId = "selected";
@@ -237,7 +262,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -270,6 +295,25 @@ export default function Home() {
         };
       });
 
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+          
+          try {
+            await fetch(`/api/companies/${newCompanyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
+
       setIsAddCompanyModalOpen(false);
     } catch (error) {
       console.error("Error adding company:", error);
@@ -282,8 +326,11 @@ export default function Home() {
     status: "waiting" | "dropped",
     index: number,
     name: string,
-    comment: string
-  ) => {
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
+  ): Promise<void> => {
     try {
       // Получаем текущие данные из состояния
       const nodeData = userCompanies[nodeId] || {
@@ -305,7 +352,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -340,9 +387,29 @@ export default function Home() {
           },
         };
       });
+      
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+          
+          try {
+            await fetch(`/api/companies/${companyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
     } catch (error) {
       console.error("Error updating company:", error);
       // Можно добавить уведомление об ошибке для пользователя
+      throw error; // Пробрасываем ошибку дальше, чтобы она была обработана в модальном окне
     }
   };
 

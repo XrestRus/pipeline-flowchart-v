@@ -3,6 +3,28 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import * as db from '@/lib/db';
+import { jwtVerify } from 'jose';
+
+// Функция для получения данных пользователя из токена
+async function getUserFromToken(request: NextRequest): Promise<number | null> {
+  try {
+    // Получаем токен из cookie
+    const token = request.cookies.get('auth-token')?.value;
+
+    if (!token) {
+      return null;
+    }
+
+    // Проверяем JWT токен
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-at-least-32-chars-long');
+    const { payload } = await jwtVerify(token, secret);
+
+    return payload.userId as number;
+  } catch (error) {
+    console.error('Ошибка получения данных пользователя:', error);
+    return null;
+  }
+}
 
 /**
  * Получение информации о компании по ID
@@ -10,39 +32,42 @@ import * as db from '@/lib/db';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Убедимся что params существует перед использованием
-    if (!params?.id) {
+    // Получаем и ожидаем id из параметров
+    const id = (await params).id;
+
+    // Убедимся что id существует перед использованием
+    if (!id) {
       return NextResponse.json(
         { success: false, error: 'Missing ID parameter' },
         { status: 400 }
       );
     }
-    
-    const id = parseInt(params.id);
-    
-    if (isNaN(id)) {
+
+    const companyId = parseInt(id);
+
+    if (isNaN(companyId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid company ID' },
         { status: 400 }
       );
     }
-    
+
     const companies = await db.getCompanies();
-    const company = companies.find((c: any) => c.id === id);
-    
+    const company = companies.find((c: any) => c.id === companyId);
+
     if (!company) {
       return NextResponse.json(
         { success: false, error: 'Company not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ success: true, data: company });
   } catch (error: any) {
-    console.error(`Error fetching company ${params?.id}:`, error);
+    console.error('Error fetching company:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch company' },
       { status: 500 }
@@ -56,29 +81,35 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Убедимся что params существует перед использованием
-    if (!params?.id) {
+    // Получаем и ожидаем id из параметров
+    const id = (await params).id;
+
+    // Убедимся что id существует перед использованием
+    if (!id) {
       return NextResponse.json(
         { success: false, error: 'Missing ID parameter' },
         { status: 400 }
       );
     }
-    
-    const id = parseInt(params.id);
-    
-    if (isNaN(id)) {
+
+    const companyId = parseInt(id);
+
+    if (isNaN(companyId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid company ID' },
         { status: 400 }
       );
     }
-    
+
     const body = await request.json();
-    const { name, nodeId, status, comment, fromNode, fromStatus } = body;
-    
+    const { name, nodeId, status, comment, fromNode, fromStatus, docLink, tenderLink } = body;
+
+    // Получаем ID пользователя из токена
+    const userId = await getUserFromToken(request);
+
     // Валидация
     if (!name || !nodeId || !status) {
       return NextResponse.json(
@@ -86,25 +117,30 @@ export async function PUT(
         { status: 400 }
       );
     }
-    
+
     // Преобразуем undefined в null для безопасной передачи в базу данных
     const safeFromNode = fromNode || null;
     const safeFromStatus = fromStatus || null;
     const safeComment = comment || '';
-    
+    const safeDocLink = docLink || null;
+    const safeTenderLink = tenderLink || null;
+
     const updatedCompany = await db.updateCompany(
-      id,
+      companyId,
       name,
       nodeId,
       status,
       safeComment,
       safeFromNode,
-      safeFromStatus
+      safeFromStatus,
+      userId,
+      safeDocLink,
+      safeTenderLink
     );
-    
+
     return NextResponse.json({ success: true, data: updatedCompany });
   } catch (error: any) {
-    console.error(`Error updating company ${params?.id}:`, error);
+    console.error('Error updating company:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update company' },
       { status: 500 }
@@ -118,41 +154,47 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Убедимся что params существует перед использованием
-    if (!params?.id) {
+    // Получаем и ожидаем id из параметров
+    const id = (await params).id;
+
+    // Убедимся что id существует перед использованием
+    if (!id) {
       return NextResponse.json(
         { success: false, error: 'Missing ID parameter' },
         { status: 400 }
       );
     }
-    
-    const id = parseInt(params.id);
-    
-    if (isNaN(id)) {
+
+    const companyId = parseInt(id);
+
+    if (isNaN(companyId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid company ID' },
         { status: 400 }
       );
     }
-    
-    const result = await db.deleteCompany(id);
-    
+
+    // Получаем ID пользователя из токена
+    const userId = await getUserFromToken(request);
+
+    const result = await db.deleteCompany(companyId, userId);
+
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: 'Company not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error(`Error deleting company ${params?.id}:`, error);
+    console.error('Error deleting company:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete company' },
       { status: 500 }
     );
   }
-} 
+}

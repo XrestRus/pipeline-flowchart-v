@@ -7,6 +7,9 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { getUserById } from '@/lib/db';
 
+// Предотвращаем кэширование ответа
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     // Получаем токен из cookie
@@ -17,7 +20,13 @@ export async function GET(request: Request) {
     if (!token) {
       return NextResponse.json(
         { error: 'Пользователь не авторизован' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+            'Pragma': 'no-cache'
+          }
+        }
       );
     }
     
@@ -33,23 +42,50 @@ export async function GET(request: Request) {
       if (!user) {
         return NextResponse.json(
           { error: 'Пользователь не найден' },
-          { status: 404 }
+          { 
+            status: 404,
+            headers: {
+              'Cache-Control': 'no-store, max-age=0',
+              'Pragma': 'no-cache'
+            }
+          }
         );
       }
       
-      return NextResponse.json({ user });
+      // Возвращаем данные пользователя с заголовками для предотвращения кэширования
+      return NextResponse.json(
+        { user },
+        {
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
     } catch (error) {
       // Если токен недействителен или истек срок действия
       return NextResponse.json(
         { error: 'Недействительный токен авторизации' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+            'Pragma': 'no-cache'
+          }
+        }
       );
     }
   } catch (error) {
     console.error('Ошибка при получении данных пользователя:', error);
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+          'Pragma': 'no-cache'
+        }
+      }
     );
   }
 } 

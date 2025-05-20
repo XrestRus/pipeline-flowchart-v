@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Save, X, Trash, ArrowDown, ArrowUp, ArrowRight, ExternalLink } from "lucide-react"
+import { Edit, Save, X, Trash, ArrowDown, ArrowUp, ArrowRight, ExternalLink, History } from "lucide-react"
 import CompanyDetailsModal from "./company-details-modal"
+import Link from "next/link"
 
 interface CompanyWithId {
   id: number;
@@ -256,6 +257,15 @@ export default function NodeModal({
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
+                                <Link href={`/company-history?id=${company.id}&name=${encodeURIComponent(company.name)}`} passHref>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    title="История изменений"
+                                  >
+                                    <History className="h-4 w-4" />
+                                  </Button>
+                                </Link>
                                 <Button
                                   variant="outline"
                                   size="icon"
@@ -390,6 +400,15 @@ export default function NodeModal({
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
+                                <Link href={`/company-history?id=${company.id}&name=${encodeURIComponent(company.name)}`} passHref>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    title="История изменений"
+                                  >
+                                    <History className="h-4 w-4" />
+                                  </Button>
+                                </Link>
                                 <Button
                                   variant="outline"
                                   size="icon"

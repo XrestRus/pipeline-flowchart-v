@@ -20,7 +20,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <NavBar />
-          <main>
+          <main className="pt-16">
             {children}
           </main>
         </ThemeProvider>

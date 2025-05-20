@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyData, getNodeData } from "@/lib/data";
 import CustomFlowchart from "@/components/custom-flowchart";
 import NodeModal from "@/components/node-modal";
 import AddCompanyModal from "@/components/add-company-modal";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { useAddCompanyModalListener } from "@/hooks/useAddCompanyModal";
 
 // Расширяем тип данных для хранения ID компаний
 interface CompanyWithId {
@@ -583,21 +582,16 @@ export default function Home() {
     }
   };
 
+  // Используем хук для прослушивания события
+  const handleOpenAddCompanyModal = useCallback(() => {
+    setIsAddCompanyModalOpen(true);
+  }, []);
+
+  useAddCompanyModalListener(handleOpenAddCompanyModal);
+
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="fixed top-0 left-0 right-0 bg-white z-10 border-b shadow-sm">
-        <div className="container mx-auto p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Проектный Пайплайн</h1>
-          <Button
-            onClick={() => setIsAddCompanyModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" /> Добавить компанию
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4 max-w-7xl mt-16 flex-grow">
+      <main className="container mx-auto p-4 max-w-7xl flex-grow">
         <Card>
           <CardHeader>
             <CardTitle>Блок-схема проектного пайплайна</CardTitle>

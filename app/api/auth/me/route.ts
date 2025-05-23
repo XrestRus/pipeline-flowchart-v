@@ -12,8 +12,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // Получаем токен из cookie
-    const token = request.headers.get('cookie')?.split('; ')
+    const cookiesHeader = request.headers.get('cookie') || '';
+    // Парсим куки
+    const token = cookiesHeader
+      .split('; ')
       .find(row => row.startsWith('auth-token='))
       ?.split('=')[1];
     
@@ -76,7 +78,6 @@ export async function GET(request: Request) {
       );
     }
   } catch (error) {
-    console.error('Ошибка при получении данных пользователя:', error);
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { 

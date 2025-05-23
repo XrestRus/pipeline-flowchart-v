@@ -1,5 +1,5 @@
 /**
- * Компонент навигационной панели 
+ * Компонент навигационной панели
  * Отображает основное меню и функции авторизации
  */
 'use client';
@@ -32,10 +32,10 @@ export default function NavBar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Функция для получения данных пользователя
   const fetchUserData = async () => {
     try {
@@ -49,7 +49,7 @@ export default function NavBar() {
           'cache-control': 'no-cache'
         }
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -63,49 +63,66 @@ export default function NavBar() {
       setLoading(false);
     }
   };
-  
+
   // Вызываем функцию получения данных пользователя при монтировании компонента
   useEffect(() => {
     fetchUserData();
   }, []);
-  
+
   // Вызываем функцию получения данных при смене пути (навигации)
   useEffect(() => {
     fetchUserData();
   }, [pathname]);
-  
+
   // Устанавливаем интервал для периодического обновления данных пользователя
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchUserData();
-    }, 30000); // Проверяем каждые 30 секунд
-    
+    }, 60000); // Проверяем каждую минуту
+
     return () => clearInterval(intervalId);
   }, []);
-  
+
   // Добавляем прослушивание события успешного входа
   useEffect(() => {
-    const handleLoginSuccess = () => {
+    const handleLoginSuccess = async () => {
       // При успешном входе сразу обновляем данные пользователя
-      fetchUserData();
+      // и затем повторно проверяем через небольшую задержку
+      await fetchUserData();
+
+      // Дополнительная проверка через таймаут для уверенности
+      const checkAuth = async () => {
+        await fetchUserData();
+      };
+
+      // Устанавливаем несколько повторных проверок
+      const timeoutIds = [
+        setTimeout(checkAuth, 500),
+        setTimeout(checkAuth, 1000),
+        setTimeout(checkAuth, 2000)
+      ];
+
+      return () => {
+        timeoutIds.forEach(id => clearTimeout(id));
+      };
     };
-    
+
     // Добавляем слушатель события
     window.addEventListener('user-login-success', handleLoginSuccess);
-    
+
     // Убираем слушатель при размонтировании компонента
     return () => {
       window.removeEventListener('user-login-success', handleLoginSuccess);
     };
   }, []);
-  
+
   // Обработчик выхода из системы
   const handleLogout = async () => {
     try {
       const res = await fetch('/api/auth/logout', {
         method: 'POST',
       });
-      
+
       if (res.ok) {
         setUser(null);
         // Принудительно обновляем данные пользователя после выхода
@@ -121,7 +138,7 @@ export default function NavBar() {
   const handleAddCompanyClick = () => {
     triggerAddCompanyModal();
   };
-  
+
   return (
     <nav className="bg-gray-800 text-white fixed top-0 left-0 right-0 z-10 shadow-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -130,7 +147,7 @@ export default function NavBar() {
             <Link href="/" className="text-white text-xl font-bold">
               Pipeline Flowchart
             </Link>
-            
+
             <div className="hidden md:block ml-10">
               <div className="flex space-x-4">
                 <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-700">
@@ -139,7 +156,7 @@ export default function NavBar() {
               </div>
             </div>
           </div>
-          
+
           <div className="hidden md:block">
             <div className="flex items-center space-x-4">
               {loading ? (
@@ -173,7 +190,7 @@ export default function NavBar() {
               )}
             </div>
           </div>
-          
+
           <div className="flex md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -194,7 +211,7 @@ export default function NavBar() {
           </div>
         </div>
       </div>
-      
+
       {/* Мобильное меню */}
       {isMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 right-0 bg-gray-800 shadow-md">
@@ -238,4 +255,4 @@ export default function NavBar() {
       )}
     </nav>
   );
-} 
+}

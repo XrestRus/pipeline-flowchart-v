@@ -34,11 +34,14 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log(`Попытка входа пользователя: ${username}`);
+
     // Получаем пользователя из базы данных
     const user = await getUserByUsername(username);
 
     // Если пользователь не найден
     if (!user) {
+      console.log(`Пользователь не найден: ${username}`);
       return NextResponse.json(
         { error: 'Неверные учетные данные' },
         { status: 401 }
@@ -48,14 +51,15 @@ export async function POST(request: Request) {
     // Проверяем пароль
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    // console.log(await hash("", 12))
-
     if (!isPasswordValid) {
+      console.log(`Неверный пароль для пользователя: ${username}`);
       return NextResponse.json(
         { error: 'Неверные учетные данные' },
         { status: 401 }
       );
     }
+
+    console.log(`Успешный вход пользователя: ${username}, ID: ${user.id}, роль: ${user.role}`);
 
     // Обновляем время последнего входа
     await updateUserLastLogin(user.id);
@@ -69,15 +73,18 @@ export async function POST(request: Request) {
       message: 'Успешная авторизация'
     });
 
-    // Устанавливаем куки с токеном
+    // Устанавливаем куки с токеном с улучшенными параметрами
     response.cookies.set({
       name: 'auth-token',
       value: token,
       httpOnly: true,
       path: '/',
-      secure: false,
-      maxAge: 60 * 60 * 24 * 10, // 10 день в секундах
+      secure: false, // В продакшене должно быть true
+      sameSite: 'lax', // Стандартный вариант для большинства случаев
+      maxAge: 60 * 60 * 24 * 10, // 10 дней в секундах
     });
+
+    console.log('Установлены куки авторизации');
 
     return response;
   } catch (error) {

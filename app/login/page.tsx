@@ -47,10 +47,6 @@ function LoginForm() {
         throw new Error(data.error || 'Ошибка авторизации');
       }
 
-      // Создаем и отправляем событие об успешной авторизации
-      const loginEvent = new Event('user-login-success');
-      window.dispatchEvent(loginEvent);
-
       // Принудительно обновляем сессию пользователя
       await fetch('/api/auth/me', {
         cache: 'no-store',
@@ -60,9 +56,17 @@ function LoginForm() {
         }
       });
 
-      // Перенаправляем пользователя на запрошенную страницу после успешной авторизации
-      // Используем replace вместо push, чтобы избежать проблем с возвратом назад
-      router.push(returnUrl);
+      // Создаем и отправляем событие об успешной авторизации
+      const loginEvent = new Event('user-login-success');
+      window.dispatchEvent(loginEvent);
+
+      console.log('Авторизация успешна, перенаправление на:', returnUrl);
+      
+      // Используем непосредственное перенаправление вместо Next.js роутера
+      // в режиме инкогнито это работает более надежно
+      setTimeout(() => {
+        window.location.href = returnUrl;
+      }, 800);
     } catch (err: any) {
       setError(err.message || 'Произошла ошибка при входе в систему');
     } finally {

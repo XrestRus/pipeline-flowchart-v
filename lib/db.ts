@@ -471,4 +471,110 @@ export async function deleteCompanyFile(fileId: number, userId: number | null = 
   );
   
   return { success: true, data: file };
+}
+
+/**
+ * Получает список пользователей
+ * @returns {Promise} - Список пользователей без паролей
+ */
+export async function getAllUsers() {
+  const sql = `
+    SELECT id, username, full_name, email, role, is_active, created_at, updated_at, last_login 
+    FROM users 
+    ORDER BY id ASC
+  `;
+  return await query<any[]>(sql);
+}
+
+/**
+ * Создает нового пользователя
+ * @param {string} username - Имя пользователя
+ * @param {string} password - Пароль пользователя
+ * @param {string} fullName - Полное имя
+ * @param {string} email - Email
+ * @param {string} role - Роль пользователя (admin/manager)
+ * @returns {Promise} - Созданный пользователь
+ */
+export async function createUser(
+  username: string,
+  password: string,
+  fullName: string,
+  email: string,
+  role: string
+) {
+  // Хеширование пароля будет выполняться в маршруте API
+  
+  const sql = `
+    INSERT INTO users (username, password, full_name, email, role)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  
+  const result = await query<any>(sql, [username, password, fullName, email, role]);
+  
+  return {
+    id: result.insertId,
+    username,
+    full_name: fullName,
+    email,
+    role,
+    is_active: true
+  };
+}
+
+/**
+ * Обновляет данные пользователя
+ * @param {number} id - ID пользователя
+ * @param {string} fullName - Полное имя
+ * @param {string} email - Email
+ * @param {string} role - Роль пользователя
+ * @param {boolean} isActive - Активен ли пользователь
+ * @returns {Promise} - Обновленный пользователь
+ */
+export async function updateUser(
+  id: number,
+  fullName: string,
+  email: string,
+  role: string,
+  isActive: boolean
+) {
+  const sql = `
+    UPDATE users 
+    SET full_name = ?, email = ?, role = ?, is_active = ?
+    WHERE id = ?
+  `;
+  
+  await query<any>(sql, [fullName, email, role, isActive, id]);
+  
+  return {
+    id,
+    full_name: fullName,
+    email,
+    role,
+    is_active: isActive
+  };
+}
+
+/**
+ * Изменяет пароль пользователя
+ * @param {number} id - ID пользователя
+ * @param {string} password - Новый пароль (хешированный)
+ * @returns {Promise} - Результат изменения пароля
+ */
+export async function changeUserPassword(id: number, password: string) {
+  const sql = 'UPDATE users SET password = ? WHERE id = ?';
+  await query<any>(sql, [password, id]);
+  
+  return { success: true, message: 'Пароль успешно изменен' };
+}
+
+/**
+ * Удаляет пользователя (деактивирует, не удаляет физически)
+ * @param {number} id - ID пользователя
+ * @returns {Promise} - Результат удаления
+ */
+export async function deleteUser(id: number) {
+  const sql = 'UPDATE users SET is_active = FALSE WHERE id = ?';
+  await query<any>(sql, [id]);
+  
+  return { success: true, message: 'Пользователь успешно деактивирован' };
 } 

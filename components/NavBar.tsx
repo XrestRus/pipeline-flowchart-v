@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { triggerAddCompanyModal } from '@/hooks/useAddCompanyModal';
 
 type User = {
@@ -139,6 +139,9 @@ export default function NavBar() {
     triggerAddCompanyModal();
   };
 
+  // Проверяем, является ли пользователь администратором
+  const isAdmin = user?.role === 'admin';
+
   return (
     <nav className="bg-gray-800 text-white fixed top-0 left-0 right-0 z-10 shadow-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -153,6 +156,11 @@ export default function NavBar() {
                 <Link href="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-700">
                   Главная
                 </Link>
+                {isAdmin && (
+                  <Link href="/admin/users" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-gray-700">
+                    Пользователи
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -163,6 +171,16 @@ export default function NavBar() {
                 <span className="text-sm">Загрузка...</span>
               ) : user ? (
                 <div className="flex items-center space-x-4">
+                  {isAdmin && (
+                    <Button
+                      onClick={() => router.push('/admin/users')}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" /> Управление пользователями
+                    </Button>
+                  )}
                   <Button
                     onClick={handleAddCompanyClick}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
@@ -219,6 +237,11 @@ export default function NavBar() {
             <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">
               Главная
             </Link>
+            {isAdmin && (
+              <Link href="/admin/users" className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">
+                Управление пользователями
+              </Link>
+            )}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-700">
             {user ? (

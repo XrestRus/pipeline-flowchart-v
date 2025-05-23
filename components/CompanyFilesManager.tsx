@@ -93,6 +93,7 @@ export default function CompanyFilesManager({ companyId }: CompanyFilesManagerPr
     // Проверка типа файла
     const allowedTypes = [
       'application/pdf',
+      'text/csv',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',

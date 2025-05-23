@@ -17,6 +17,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 // Разрешенные типы файлов
 const ALLOWED_FILE_TYPES = [
   'application/pdf',
+  'text/csv',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
@@ -52,39 +53,39 @@ export function isAllowedFileType(fileType: string) {
 export async function processFileUpload(req: NextRequest) {
   // Проверяем наличие директории для загрузки
   await initUploadsDir();
-  
+
   // Парсим FormData из запроса
   const formData = await req.formData();
-  
+
   // Получаем файл
   const file = formData.get('file') as File;
   const description = formData.get('description') as string;
-  
+
   if (!file) {
     throw new Error('No file uploaded');
   }
-  
+
   // Проверяем тип файла
   if (!isAllowedFileType(file.type)) {
     throw new Error('File type not allowed');
   }
-  
+
   // Проверяем размер файла
   if (file.size > MAX_FILE_SIZE) {
     throw new Error('File size exceeds limit');
   }
-  
+
   // Создаем уникальное имя файла
   const ext = path.extname(file.name);
   const filename = `${uuidv4()}${ext}`;
   const filepath = path.join(UPLOADS_DIR, filename);
-  
+
   // Читаем содержимое файла и сохраняем его
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  
+
   await writeFile(filepath, buffer);
-  
+
   return {
     fields: { description: [description] },
     file: {
@@ -110,4 +111,4 @@ export async function deleteFile(filePath: string) {
     console.error('Error deleting file:', error);
     return { success: false, error };
   }
-} 
+}

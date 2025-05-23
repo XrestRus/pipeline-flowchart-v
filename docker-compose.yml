@@ -1,12 +1,25 @@
 version: '3.8'
 
 services:
+  # Nginx - прокси сервер
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "8083:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd
+    depends_on:
+      - app
+      - phpmyadmin
+    networks:
+      - app-network
+
   # Next.js приложение
   app:
     image: node:20-alpine
     restart: always
-    ports:
-      - "8083:3000"
     environment:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
@@ -41,8 +54,6 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     restart: always
-    ports:
-      - "8084:80"
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306

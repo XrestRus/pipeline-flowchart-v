@@ -19,6 +19,24 @@ const nextConfig = {
     DATABASE_PASSWORD: process.env.DATABASE_PASSWORD || 'pipeline_password',
     DATABASE_NAME: process.env.DATABASE_NAME || 'pipeline_db'
   },
+  generateEtags: false,
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+    responseLimit: '10mb',
+  },
+  headers: async () => [
+    {
+      source: '/api/companies/:id/files',
+      headers: [
+        {
+          key: 'Access-Control-Allow-Methods',
+          value: 'GET, POST, DELETE',
+        },
+      ],
+    },
+  ],
 }
 
 export default nextConfig

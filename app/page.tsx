@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyData, getNodeData } from "@/lib/data";
 import CustomFlowchart from "@/components/custom-flowchart";
 import NodeModal from "@/components/node-modal";
 import AddCompanyModal from "@/components/add-company-modal";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { useAddCompanyModalListener } from "@/hooks/useAddCompanyModal";
 
 // Расширяем тип данных для хранения ID компаний
 interface CompanyWithId {
@@ -17,10 +16,10 @@ interface CompanyWithId {
 }
 
 interface CompanyDataWithIds {
-  waiting: { 
+  waiting: {
     companies: CompanyWithId[];
   };
-  dropped: { 
+  dropped: {
     companies: CompanyWithId[];
   };
 }
@@ -54,7 +53,7 @@ export default function Home() {
   const nodeConnections = {
     selected: ["collecting"],
     collecting: ["submitted"],
-    submitted: ["won", "waiting"],
+    submitted: ["won"],
     won: ["preparation"],
     waiting: ["preparation"],
     preparation: ["mvp"],
@@ -178,7 +177,10 @@ export default function Home() {
     nodeId: string,
     status: "waiting" | "dropped",
     name: string,
-    comment: string
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
   ) => {
     try {
       // Отправляем запрос на API для сохранения компании в БД
@@ -187,7 +189,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -216,6 +218,25 @@ export default function Home() {
           },
         };
       });
+
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+
+          try {
+            await fetch(`/api/companies/${newCompanyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
     } catch (error) {
       console.error("Error adding company:", error);
       // Можно добавить уведомление об ошибке для пользователя
@@ -224,7 +245,10 @@ export default function Home() {
 
   const handleAddCompanyToBeginning = async (
     name: string,
-    comment: string
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
   ) => {
     // Add to the "selected" node by default
     const nodeId = "selected";
@@ -237,7 +261,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -262,13 +286,32 @@ export default function Home() {
             ...nodeData,
             [status]: {
               companies: [
-                { id: newCompanyId, name, comment }, 
+                { id: newCompanyId, name, comment },
                 ...nodeData[status].companies
               ],
             },
           },
         };
       });
+
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+
+          try {
+            await fetch(`/api/companies/${newCompanyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
 
       setIsAddCompanyModalOpen(false);
     } catch (error) {
@@ -282,8 +325,11 @@ export default function Home() {
     status: "waiting" | "dropped",
     index: number,
     name: string,
-    comment: string
-  ) => {
+    comment: string,
+    docLink?: string | null,
+    tenderLink?: string | null,
+    filesToUpload?: { file: File, description: string }[]
+  ): Promise<void> => {
     try {
       // Получаем текущие данные из состояния
       const nodeData = userCompanies[nodeId] || {
@@ -296,7 +342,7 @@ export default function Home() {
       if (!company) {
         throw new Error("Company not found");
       }
-      
+
       const companyId = company.id;
 
       // Отправляем запрос на API для обновления компании в БД
@@ -305,7 +351,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
       });
 
       if (!response.ok) {
@@ -324,10 +370,10 @@ export default function Home() {
         const userIndex = index;
         const newCompanies = [...prevNodeData[status].companies];
 
-        newCompanies[userIndex] = { 
+        newCompanies[userIndex] = {
           ...newCompanies[userIndex],
-          name, 
-          comment 
+          name,
+          comment
         };
 
         return {
@@ -340,9 +386,29 @@ export default function Home() {
           },
         };
       });
+
+      // Если есть файлы для загрузки, загружаем их по одному
+      if (filesToUpload && filesToUpload.length > 0) {
+        for (const fileData of filesToUpload) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('description', fileData.description);
+
+          try {
+            await fetch(`/api/companies/${companyId}/files`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileError) {
+            console.error("Error uploading file:", fileError);
+            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+          }
+        }
+      }
     } catch (error) {
       console.error("Error updating company:", error);
       // Можно добавить уведомление об ошибке для пользователя
+      throw error; // Пробрасываем ошибку дальше, чтобы она была обработана в модальном окне
     }
   };
 
@@ -363,7 +429,7 @@ export default function Home() {
       if (!company) {
         throw new Error("Company not found");
       }
-      
+
       const companyId = company.id;
 
       // Отправляем запрос на API для удаления компании из БД
@@ -464,7 +530,7 @@ export default function Home() {
           ...toNodeData,
           [toStatus]: {
             companies: [
-              ...toNodeData[toStatus].companies, 
+              ...toNodeData[toStatus].companies,
               { id: companyId, name, comment }
             ],
           },
@@ -516,21 +582,16 @@ export default function Home() {
     }
   };
 
+  // Используем хук для прослушивания события
+  const handleOpenAddCompanyModal = useCallback(() => {
+    setIsAddCompanyModalOpen(true);
+  }, []);
+
+  useAddCompanyModalListener(handleOpenAddCompanyModal);
+
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="fixed top-0 left-0 right-0 bg-white z-10 border-b shadow-sm">
-        <div className="container mx-auto p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Проектный Пайплайн</h1>
-          <Button
-            onClick={() => setIsAddCompanyModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" /> Добавить компанию
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4 max-w-7xl mt-16 flex-grow">
+      <main className="container mx-auto p-4 max-w-7xl flex-grow">
         <Card>
           <CardHeader>
             <CardTitle>Блок-схема проектного пайплайна</CardTitle>
@@ -578,7 +639,7 @@ function getNodeTitle(nodeId: string): string {
     collecting: "Собираем КП",
     submitted: "Подали КП",
     won: "Выграли КП",
-    waiting: "Ожидаем фидбека",
+    // waiting: "Ожидаем фидбека",
     preparation: "Подготовка к старту",
     mvp: "Делаем MVP",
     delivery: "Сдача MVP",

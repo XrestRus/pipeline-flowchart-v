@@ -16,10 +16,10 @@ interface CompanyWithId {
 }
 
 interface CompanyDataWithIds {
-  waiting: { 
+  waiting: {
     companies: CompanyWithId[];
   };
-  dropped: { 
+  dropped: {
     companies: CompanyWithId[];
   };
 }
@@ -53,7 +53,7 @@ export default function Home() {
   const nodeConnections = {
     selected: ["collecting"],
     collecting: ["submitted"],
-    submitted: ["won", "waiting"],
+    submitted: ["won"],
     won: ["preparation"],
     waiting: ["preparation"],
     preparation: ["mvp"],
@@ -218,14 +218,14 @@ export default function Home() {
           },
         };
       });
-      
+
       // Если есть файлы для загрузки, загружаем их по одному
       if (filesToUpload && filesToUpload.length > 0) {
         for (const fileData of filesToUpload) {
           const formData = new FormData();
           formData.append('file', fileData.file);
           formData.append('description', fileData.description);
-          
+
           try {
             await fetch(`/api/companies/${newCompanyId}/files`, {
               method: 'POST',
@@ -286,7 +286,7 @@ export default function Home() {
             ...nodeData,
             [status]: {
               companies: [
-                { id: newCompanyId, name, comment }, 
+                { id: newCompanyId, name, comment },
                 ...nodeData[status].companies
               ],
             },
@@ -300,7 +300,7 @@ export default function Home() {
           const formData = new FormData();
           formData.append('file', fileData.file);
           formData.append('description', fileData.description);
-          
+
           try {
             await fetch(`/api/companies/${newCompanyId}/files`, {
               method: 'POST',
@@ -342,7 +342,7 @@ export default function Home() {
       if (!company) {
         throw new Error("Company not found");
       }
-      
+
       const companyId = company.id;
 
       // Отправляем запрос на API для обновления компании в БД
@@ -370,10 +370,10 @@ export default function Home() {
         const userIndex = index;
         const newCompanies = [...prevNodeData[status].companies];
 
-        newCompanies[userIndex] = { 
+        newCompanies[userIndex] = {
           ...newCompanies[userIndex],
-          name, 
-          comment 
+          name,
+          comment
         };
 
         return {
@@ -386,14 +386,14 @@ export default function Home() {
           },
         };
       });
-      
+
       // Если есть файлы для загрузки, загружаем их по одному
       if (filesToUpload && filesToUpload.length > 0) {
         for (const fileData of filesToUpload) {
           const formData = new FormData();
           formData.append('file', fileData.file);
           formData.append('description', fileData.description);
-          
+
           try {
             await fetch(`/api/companies/${companyId}/files`, {
               method: 'POST',
@@ -429,7 +429,7 @@ export default function Home() {
       if (!company) {
         throw new Error("Company not found");
       }
-      
+
       const companyId = company.id;
 
       // Отправляем запрос на API для удаления компании из БД
@@ -530,7 +530,7 @@ export default function Home() {
           ...toNodeData,
           [toStatus]: {
             companies: [
-              ...toNodeData[toStatus].companies, 
+              ...toNodeData[toStatus].companies,
               { id: companyId, name, comment }
             ],
           },
@@ -639,7 +639,7 @@ function getNodeTitle(nodeId: string): string {
     collecting: "Собираем КП",
     submitted: "Подали КП",
     won: "Выграли КП",
-    waiting: "Ожидаем фидбека",
+    // waiting: "Ожидаем фидбека",
     preparation: "Подготовка к старту",
     mvp: "Делаем MVP",
     delivery: "Сдача MVP",

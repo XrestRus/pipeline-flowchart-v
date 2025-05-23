@@ -49,9 +49,9 @@ interface NodeModalProps {
     filesToUpload?: { file: File, description: string }[]
   ) => Promise<void>
   onAddCompany: (
-    nodeId: string, 
-    status: "waiting" | "dropped", 
-    name: string, 
+    nodeId: string,
+    status: "waiting" | "dropped",
+    name: string,
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
@@ -149,7 +149,7 @@ export default function NodeModal({
       onMoveCompany(nodeId, nextNodeId, status, "waiting", index)
     }
   }
-  
+
   const handleOpenCompanyDetails = (index: number, status: "waiting" | "dropped") => {
     if (nodeId) {
       const company = mergedData[status].companies[index];
@@ -163,7 +163,7 @@ export default function NodeModal({
       setCompanyDetailsModalOpen(true);
     }
   }
-  
+
   const handleCloseCompanyDetails = () => {
     setCompanyDetailsModalOpen(false);
     setSelectedCompany(null);
@@ -287,8 +287,8 @@ export default function NodeModal({
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      onClick={nextNodes.length === 1 ? 
-                                        () => handleMoveToNextNode("waiting", index, nextNodes[0]) : 
+                                      onClick={nextNodes.length === 1 ?
+                                        () => handleMoveToNextNode("waiting", index, nextNodes[0]) :
                                         undefined}
                                       title={
                                         nextNodes.length === 1
@@ -324,7 +324,7 @@ export default function NodeModal({
                   })}
                 </TableBody>
               </Table>
-              
+
               {mergedData.waiting.companies.length === 0 && (
                 <div className="py-24 text-center text-gray-500">
                   Нет компаний в статусе "Ожидает"
@@ -434,7 +434,7 @@ export default function NodeModal({
                   })}
                 </TableBody>
               </Table>
-              
+
               {mergedData.dropped.companies.length === 0 && (
                 <div className="py-24 text-center text-gray-500">
                   Нет компаний в статусе "Выбыли"
@@ -444,7 +444,7 @@ export default function NodeModal({
           </Tabs>
         </DialogContent>
       </Dialog>
-      
+
       {selectedCompany && nodeId && (
         <CompanyDetailsModal
           isOpen={companyDetailsModalOpen}
@@ -468,7 +468,7 @@ function getNodeTitle(nodeId: string): string {
     collecting: "Собираем КП",
     submitted: "Подали КП",
     won: "Выграли КП",
-    waiting: "Ожидаем фидбека",
+    // waiting: "Ожидаем фидбека",
     preparation: "Подготовка к старту",
     mvp: "Делаем MVP",
     delivery: "Сдача MVP",

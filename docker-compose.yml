@@ -6,7 +6,7 @@ services:
     image: nginx:alpine
     restart: always
     ports:
-      - "80:80"
+      - "8083:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd
@@ -20,9 +20,6 @@ services:
   app:
     image: node:20-alpine
     restart: always
-    # Убран прямой доступ к порту 8083, только через nginx
-    expose:
-      - "3000"
     environment:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306
@@ -57,9 +54,6 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     restart: always
-    # Убран прямой доступ к порту 8084, только через nginx
-    expose:
-      - "80"
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306

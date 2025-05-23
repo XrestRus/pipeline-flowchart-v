@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
-import { CompanyHistoryTimeline } from "@/components/company-history-timeline"; 
+import { CompanyHistoryTimeline } from "@/components/company-history-timeline";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,11 +11,11 @@ import Link from "next/link";
 /**
  * Страница для отображения истории логов компании
  */
-export default function CompanyHistoryPage() {
+function _CompanyHistoryPage() {
   const searchParams = useSearchParams();
   const companyId = searchParams.get("id");
   const companyName = searchParams.get("name");
-  
+
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +30,13 @@ export default function CompanyHistoryPage() {
 
       try {
         const response = await fetch(`/api/companies/${companyId}/logs`);
-        
+
         if (!response.ok) {
           throw new Error("Не удалось загрузить историю компании");
         }
 
         const data = await response.json();
-        
+
         if (data.success) {
           setLogs(data.data);
         } else {
@@ -58,7 +58,7 @@ export default function CompanyHistoryPage() {
         <div>
           <Link href="/">
             <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 mr-2"/>
               Назад к списку
             </Button>
           </Link>
@@ -82,10 +82,42 @@ export default function CompanyHistoryPage() {
           ) : logs.length === 0 ? (
             <div className="text-center py-8 text-gray-500">История изменений пуста</div>
           ) : (
-            <CompanyHistoryTimeline logs={logs} />
+            <CompanyHistoryTimeline logs={logs}/>
           )}
         </CardContent>
       </Card>
     </div>
   );
-} 
+}
+
+function CompanyHistoryPageLoading() {
+  return (
+    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      <div className="text-center">
+        <div
+          className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]">
+          <span
+            className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+            Загрузка...
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CompanyHistoryPage() {
+  return (
+    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight">
+          Вход в систему
+        </h2>
+      </div>
+
+      <Suspense fallback={<CompanyHistoryPageLoading/>}>
+        <_CompanyHistoryPage/>
+      </Suspense>
+    </div>
+  );
+}

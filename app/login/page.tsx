@@ -16,23 +16,23 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/';
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       setError('Пожалуйста, введите имя пользователя и пароль');
       return;
     }
-    
+
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -40,17 +40,17 @@ function LoginForm() {
         },
         body: JSON.stringify({ username, password }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Ошибка авторизации');
       }
-      
+
       // Создаем и отправляем событие об успешной авторизации
       const loginEvent = new Event('user-login-success');
       window.dispatchEvent(loginEvent);
-      
+
       // Принудительно обновляем сессию пользователя
       await fetch('/api/auth/me', {
         cache: 'no-store',
@@ -59,17 +59,19 @@ function LoginForm() {
           'cache-control': 'no-cache'
         }
       });
-      
+
+      console.log(returnUrl)
+
       // Перенаправляем пользователя на запрошенную страницу после успешной авторизации
       // Используем replace вместо push, чтобы избежать проблем с возвратом назад
-      router.replace(returnUrl);
+      router.push(returnUrl);
     } catch (err: any) {
       setError(err.message || 'Произошла ошибка при входе в систему');
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
       {error && (
@@ -77,7 +79,7 @@ function LoginForm() {
           {error}
         </div>
       )}
-      
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="username" className="block text-sm font-medium leading-6 ">
@@ -165,4 +167,4 @@ export default function LoginPage() {
       </Suspense>
     </div>
   );
-} 
+}

@@ -6,7 +6,7 @@ services:
     image: nginx:alpine
     restart: always
     ports:
-      - "8083:80"
+      - "8084:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd
@@ -20,6 +20,8 @@ services:
   app:
     image: node:20-alpine
     restart: always
+    ports:
+      - "8083:80"
     environment:
       - DATABASE_HOST=db
       - DATABASE_PORT=3306

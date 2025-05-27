@@ -1,14 +1,13 @@
 /**
  * Компонент таблицы пользователей для административной панели
  */
-import { useState } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +32,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
   // Форматирование даты
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '—';
-    
+
     const date = new Date(dateString);
     return date.toLocaleString('ru-RU', {
       day: '2-digit',
@@ -85,15 +84,15 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                 </TableCell>
                 <TableCell>{formatDate(user.last_login)}</TableCell>
                 <TableCell className="text-right space-x-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => onEdit(user)}
                   >
                     Изменить
                   </Button>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     size="sm"
                     onClick={() => onDelete(user)}
                     disabled={user.role === 'admin'}
@@ -108,4 +107,4 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       </Table>
     </div>
   );
-} 
+}

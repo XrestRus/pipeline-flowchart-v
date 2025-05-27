@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,6 +14,9 @@ interface CompanyWithId {
   name: string;
   comment: string;
   deadline_date?: string | null;
+  doc_link?: string | null;
+  tender_link?: string | null;
+  tkp_link?: string | null;
 }
 
 // Интерфейс для выбранной компании
@@ -24,6 +27,9 @@ interface SelectedCompany {
   status: "waiting" | "dropped";
   index: number; // Индекс компании обязателен
   deadline_date?: string | null;
+  doc_link?: string | null;
+  tender_link?: string | null;
+  tkp_link?: string | null;
 }
 
 // Интерфейс для содержимого таблицы
@@ -243,37 +249,21 @@ export default function NodeModal({
 
   // Загрузка дат для компаний текущего узла
   useEffect(() => {
-    const fetchCompanyDates = async () => {
-      const dates: Record<number, string | null> = {};
+    // Убираем дублирующиеся API запросы - используем данные из пропсов
+    const dates: Record<number, string | null> = {};
 
-      // Собираем все ID компаний в текущем узле
-      const companyIds = [
-        ...(userData.waiting.companies || []).map(c => c.id),
-        ...(userData.dropped.companies || []).map(c => c.id)
-      ];
+    // Собираем deadline_date из уже загруженных данных компаний
+    const allCompanies = [
+      ...(userData.waiting.companies || []),
+      ...(userData.dropped.companies || [])
+    ];
 
-      // Запрашиваем данные для каждой компании
-      for (const id of companyIds) {
-        try {
-          const response = await fetch(`/api/companies/${id}`);
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              dates[id] = result.data.deadline_date;
-            }
-          }
-        } catch (error) {
-          console.error(`Ошибка получения данных для компании ${id}:`, error);
-        }
-      }
+    allCompanies.forEach(company => {
+      dates[company.id] = company.deadline_date || null;
+    });
 
-      setDeadlineDates(dates);
-    };
-
-    if (isOpen && nodeId) {
-      fetchCompanyDates();
-    }
-  }, [isOpen, nodeId, userData]); // Заменяем mergedData на userData
+    setDeadlineDates(dates);
+  }, [isOpen, nodeId, userData]);
 
   const handleDelete = (status: "waiting" | "dropped", index: number) => {
     if (nodeId) {
@@ -303,7 +293,10 @@ export default function NodeModal({
         comment: company.comment,
         status,
         index,
-        deadline_date: deadlineDates[company.id]
+        deadline_date: company.deadline_date,
+        doc_link: company.doc_link,
+        tender_link: company.tender_link,
+        tkp_link: company.tkp_link
       });
       setCompanyDetailsModalOpen(true);
     }
@@ -322,6 +315,9 @@ export default function NodeModal({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Детали этапа: {nodeTitle}</DialogTitle>
+            <DialogDescription>
+              Управление компаниями на этапе {nodeTitle}
+            </DialogDescription>
           </DialogHeader>
 
           <Tabs
@@ -386,6 +382,10 @@ export default function NodeModal({
           nodeId={nodeId}
           status={selectedCompany.status}
           index={selectedCompany.index}
+          deadlineDate={selectedCompany.deadline_date}
+          docLink={selectedCompany.doc_link}
+          tenderLink={selectedCompany.tender_link}
+          tkpLink={selectedCompany.tkp_link}
           onUpdateCompany={onUpdateCompany}
         />
       )}

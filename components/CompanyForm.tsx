@@ -5,7 +5,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -89,6 +89,10 @@ interface CompanyFormProps {
   nodeId?: string;
   status?: "waiting" | "dropped";
   index?: number;
+  deadlineDate?: string | null;
+  docLink?: string | null;
+  tenderLink?: string | null;
+  tkpLink?: string | null;
   onUpdateCompany?: (
     nodeId: string,
     status: "waiting" | "dropped",
@@ -121,6 +125,10 @@ export default function CompanyForm({
   nodeId,
   status = "waiting",
   index,
+  deadlineDate: initialDeadlineDate,
+  docLink: initialDocLink,
+  tenderLink: initialTenderLink,
+  tkpLink: initialTkpLink,
   onUpdateCompany,
   showStatusSelector = false,
   defaultStatus = "waiting"
@@ -141,34 +149,16 @@ export default function CompanyForm({
 
   // Загрузка данных для режима редактирования
   useEffect(() => {
-    if (mode === "edit" && isOpen && companyId) {
-      const fetchCompanyDetails = async () => {
-        try {
-          const response = await fetch(`/api/companies/${companyId}`);
-          if (!response.ok) {
-            throw new Error("Не удалось загрузить данные о компании");
-          }
-
-          const data = await response.json();
-          if (data.success && data.data) {
-            const company = data.data;
-            setName(company.name);
-            setComment(company.comment || "");
-            setDocLink(company.doc_link || "");
-            setTenderLink(company.tender_link || "");
-            setTkpLink(company.tkp_link || "");
-            setDeadlineDate(company.deadline_date || "");
-          }
-        } catch (error) {
-          console.error("Ошибка загрузки данных о компании:", error);
-          setError("Не удалось загрузить дополнительные данные о компании");
-        }
-      };
-
+    if (mode === "edit" && isOpen) {
+      // Используем данные, переданные через пропсы, вместо API запроса
       setName(companyName);
       setComment(companyComment);
-      fetchCompanyDetails();
+      setDocLink(initialDocLink || "");
+      setTenderLink(initialTenderLink || "");
+      setTkpLink(initialTkpLink || "");
+      setDeadlineDate(initialDeadlineDate || "");
       setFilesToUpload([]);
+      setError(null);
     } else if (mode === "add" && isOpen) {
       // Сброс формы для режима добавления
       setName("");
@@ -181,7 +171,7 @@ export default function CompanyForm({
       setFilesToUpload([]);
       setError(null);
     }
-  }, [isOpen, mode, companyId, companyName, companyComment, defaultStatus]);
+  }, [isOpen, mode, companyName, companyComment, initialDeadlineDate, initialDocLink, initialTenderLink, initialTkpLink, defaultStatus]);
 
   // Валидация URL
   const isValidUrl = (url: string) => {
@@ -294,6 +284,9 @@ export default function CompanyForm({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {/* Добавьте описание для формы, если оно необходимо */}
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab}>
@@ -319,14 +312,29 @@ export default function CompanyForm({
             <div className="space-y-2">
               <Label htmlFor="deadline-date">Срок подачи КП</Label>
               <div className="relative">
-                <Input
+                <input
+                  key={`deadline-${mode}-${isOpen}`}
                   id="deadline-date"
                   type="date"
                   value={formatDateForInput(deadlineDate)}
                   onChange={(e) => setDeadlineDate(e.target.value || "")}
-                  className="pl-10"
+                  onClick={(e) => {
+                    // Программно открываем календарь при клике на любое место input'а
+                    e.currentTarget.showPicker?.();
+                  }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent"
+                  style={{
+                    colorScheme: 'light'
+                  }}
                 />
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Calendar 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-600 cursor-pointer" 
+                  onClick={() => {
+                    // Открываем календарь при клике на иконку
+                    const input = document.getElementById('deadline-date') as HTMLInputElement;
+                    input?.showPicker?.();
+                  }}
+                />
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 Укажите конечный срок подачи коммерческого предложения
@@ -492,6 +500,23 @@ export default function CompanyForm({
                 </div>
               )}
             </div>
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="ml-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {mode === "add" ? "Добавление..." : "Сохранение..."}
+                  </>
+                ) : (
+                  mode === "add" ? "Добавить компанию" : "Сохранить изменения"
+                )}
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Вкладка с файлами */}
@@ -502,6 +527,23 @@ export default function CompanyForm({
               onFileSelect={mode === "add" ? handleFileSelect : undefined}
               title={mode === "edit" ? "Управление файлами" : "Загрузка файлов"}
             />
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="ml-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {mode === "add" ? "Добавление..." : "Сохранение..."}
+                  </>
+                ) : (
+                  mode === "add" ? "Добавить компанию" : "Сохранить изменения"
+                )}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

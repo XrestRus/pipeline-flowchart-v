@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -91,7 +90,7 @@ const getNodeName = (nodeId: string): string => {
     'delivery': 'Сдача',
     'support': 'Поддержка'
   };
-  
+
   return nodeNames[nodeId] || nodeId;
 };
 
@@ -103,7 +102,7 @@ const getStatusName = (status: string): string => {
     'waiting': 'Ожидание',
     'dropped': 'Отклонено'
   };
-  
+
   return statusNames[status] || status;
 };
 
@@ -115,7 +114,7 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
     <div className="relative">
       {/* Линия временной шкалы */}
       <div className="absolute left-12 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-      
+
       {/* События */}
       <div className="space-y-8">
         {logs.map((log) => (
@@ -126,7 +125,7 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
                 <div className="h-2 w-2 rounded-full bg-white"></div>
               </div>
             </div>
-            
+
             {/* Содержимое события */}
             <div className="flex-grow rounded-md border p-4 shadow-sm">
               <div className="flex justify-between items-start mb-2">
@@ -134,13 +133,13 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
                   {getActionText(log.action)}
                 </Badge>
                 <div className="text-sm text-gray-500">
-                  {formatDistanceToNow(new Date(log.created_at), { 
+                  {formatDistanceToNow(new Date(log.created_at), {
                     addSuffix: true,
                     locale: ru
                   })}
                 </div>
               </div>
-              
+
               <div className="text-sm mb-2">
                 {log.action === 'move' && (
                   <p>
@@ -153,7 +152,7 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
                     )}
                   </p>
                 )}
-                
+
                 {log.action === 'update' && (
                   <>
                     {(log.from_node !== log.to_node) && (
@@ -168,12 +167,12 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
                     )}
                   </>
                 )}
-                
+
                 {log.comment && (
                   <p className="mt-2">{log.comment}</p>
                 )}
               </div>
-              
+
               {log.username && (
                 <div className="text-xs text-gray-500 mt-2">
                   Пользователь: {log.user_full_name || log.username}
@@ -185,4 +184,4 @@ export function CompanyHistoryTimeline({ logs }: CompanyHistoryTimelineProps) {
       </div>
     </div>
   );
-} 
+}

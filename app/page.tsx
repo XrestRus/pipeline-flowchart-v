@@ -14,6 +14,10 @@ interface CompanyWithId {
   id: number;
   name: string;
   comment: string;
+  deadline_date?: string | null;
+  doc_link?: string | null;
+  tender_link?: string | null;
+  tkp_link?: string | null;
 }
 
 interface CompanyDataWithIds {
@@ -32,6 +36,10 @@ interface ApiCompany {
   node_id: string;
   status: "waiting" | "dropped";
   comment: string | null;
+  deadline_date?: string | null;
+  doc_link?: string | null;
+  tender_link?: string | null;
+  tkp_link?: string | null;
 }
 
 interface ApiResponse {
@@ -115,7 +123,11 @@ export default function Home() {
             companiesByNode[company.node_id][company.status].companies.push({
               id: company.id,
               name: company.name,
-              comment: company.comment || ""
+              comment: company.comment || "",
+              deadline_date: company.deadline_date,
+              doc_link: company.doc_link,
+              tender_link: company.tender_link,
+              tkp_link: company.tkp_link
             });
           }
         });
@@ -216,7 +228,7 @@ export default function Home() {
           [nodeId]: {
             ...nodeData,
             [status]: {
-              companies: [...nodeData[status].companies, { id: newCompanyId, name, comment }],
+              companies: [...nodeData[status].companies, { id: newCompanyId, name, comment, deadline_date: deadlineDate, doc_link: docLink, tender_link: tenderLink, tkp_link: tkpLink }],
             },
           },
         };
@@ -340,7 +352,11 @@ export default function Home() {
         newCompanies[userIndex] = {
           ...newCompanies[userIndex],
           name,
-          comment
+          comment,
+          deadline_date: deadlineDate,
+          doc_link: docLink,
+          tender_link: tenderLink,
+          tkp_link: tkpLink
         };
 
         return {
@@ -462,21 +478,10 @@ export default function Home() {
       const companyId = companyData.id;
       const name = companyData.name;
       const comment = companyData.comment;
-
-      // Получаем дополнительные данные о компании
-      const companyResponse = await fetch(`/api/companies/${companyId}`);
-      const companyDetails = await companyResponse.json();
-      let docLink = null;
-      let tenderLink = null;
-      let tkpLink = null;
-      let deadlineDate = null;
-
-      if (companyResponse.ok && companyDetails.success && companyDetails.data) {
-        docLink = companyDetails.data.doc_link;
-        tenderLink = companyDetails.data.tender_link;
-        tkpLink = companyDetails.data.tkp_link;
-        deadlineDate = companyDetails.data.deadline_date;
-      }
+      const deadlineDate = companyData.deadline_date;
+      const docLink = companyData.doc_link;
+      const tenderLink = companyData.tender_link;
+      const tkpLink = companyData.tkp_link;
 
       // Отправляем запрос на API для обновления компании в БД
       const response = await fetch(`/api/companies/${companyId}`, {
@@ -491,10 +496,10 @@ export default function Home() {
           comment,
           fromNode: fromNodeId,
           fromStatus,
-          docLink,
-          tenderLink,
-          tkpLink,
-          deadlineDate
+          deadlineDate,
+          doc_link: docLink,
+          tender_link: tenderLink,
+          tkp_link: tkpLink
         }),
       });
 
@@ -519,7 +524,7 @@ export default function Home() {
           [toStatus]: {
             companies: [
               ...toNodeData[toStatus].companies,
-              { id: companyId, name, comment }
+              { id: companyId, name, comment, deadline_date: deadlineDate, doc_link: docLink, tender_link: tenderLink, tkp_link: tkpLink }
             ],
           },
         };

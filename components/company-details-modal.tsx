@@ -20,6 +20,10 @@ interface CompanyDetailsModalProps {
   nodeId: string;
   status: "waiting" | "dropped";
   index: number;
+  deadlineDate?: string | null;
+  docLink?: string | null;
+  tenderLink?: string | null;
+  tkpLink?: string | null;
   onUpdateCompany: (
     nodeId: string,
     status: "waiting" | "dropped",
@@ -43,6 +47,10 @@ export default function CompanyDetailsModal({
   nodeId,
   status,
   index,
+  deadlineDate,
+  docLink,
+  tenderLink,
+  tkpLink,
   onUpdateCompany,
 }: CompanyDetailsModalProps) {
   return (
@@ -56,6 +64,10 @@ export default function CompanyDetailsModal({
       nodeId={nodeId}
       status={status}
       index={index}
+      deadlineDate={deadlineDate}
+      docLink={docLink}
+      tenderLink={tenderLink}
+      tkpLink={tkpLink}
       onUpdateCompany={onUpdateCompany}
     />
   );

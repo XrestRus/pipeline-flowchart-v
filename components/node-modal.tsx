@@ -46,6 +46,8 @@ interface NodeModalProps {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: { file: File, description: string }[]
   ) => Promise<void>
   onAddCompany: (
@@ -55,6 +57,8 @@ interface NodeModalProps {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: { file: File, description: string }[]
   ) => void
   onDeleteCompany: (nodeId: string, status: "waiting" | "dropped", index: number) => void
@@ -113,7 +117,7 @@ export default function NodeModal({
 
   const handleSave = () => {
     if (editingRow && nodeId) {
-      onUpdateCompany(nodeId, editingRow.status, editingRow.index, editingRow.company, editingRow.comment)
+      onUpdateCompany(nodeId, editingRow.status, editingRow.index, editingRow.company, editingRow.comment, null, null, null, null)
       setEditingRow(null)
     }
   }

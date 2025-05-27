@@ -78,6 +78,8 @@ export async function getCompanies(nodeId?: string, status?: string) {
  * @param {number|null} userId - ID пользователя, выполняющего действие
  * @param {string|null} docLink - Ссылка на ТЗ (яндекс/гугл документ)
  * @param {string|null} tenderLink - Ссылка на сайт с тендером
+ * @param {string|null} tkpLink - Ссылка на ТКП в яндекс диске
+ * @param {string|null} deadlineDate - Конечный срок подачи КП
  * @returns {Promise} - Добавленная компания
  */
 export async function addCompany(
@@ -87,16 +89,50 @@ export async function addCompany(
   comment: string, 
   userId: number | null = null,
   docLink: string | null = null,
-  tenderLink: string | null = null
+  tenderLink: string | null = null,
+  tkpLink: string | null = null,
+  deadlineDate: string | null = null
 ) {
+  // Логируем входные параметры
+  console.log('addCompany параметры:', {
+    name, nodeId, status, comment, userId, 
+    docLink, tenderLink, tkpLink, deadlineDate, 
+    deadlineDateType: deadlineDate ? typeof deadlineDate : null
+  });
+
+  // Преобразуем и валидируем deadline_date
+  let validDeadlineDate = null;
+  if (deadlineDate) {
+    // Проверяем формат даты (должен быть YYYY-MM-DD для MySQL DATE)
+    if (typeof deadlineDate === 'string' && deadlineDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      validDeadlineDate = deadlineDate;
+    } else {
+      console.warn('Некорректный формат даты в addCompany:', deadlineDate);
+      // Если формат не соответствует, попробуем конвертировать
+      try {
+        const date = new Date(deadlineDate as string);
+        if (!isNaN(date.getTime())) {
+          const year = date.getUTCFullYear();
+          const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+          const day = date.getUTCDate().toString().padStart(2, '0');
+          validDeadlineDate = `${year}-${month}-${day}`;
+        }
+      } catch (e) {
+        console.error('Ошибка конвертации даты в addCompany:', e);
+      }
+    }
+  }
+  
+  console.log('Итоговая дата для SQL в addCompany:', validDeadlineDate);
+
   const sql = `
     INSERT INTO companies (
-      name, node_id, status, comment, doc_link, tender_link
+      name, node_id, status, comment, doc_link, tender_link, tkp_link, deadline_date
     )
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  const result = await query<any>(sql, [name, nodeId, status, comment, docLink, tenderLink]);
+  const result = await query<any>(sql, [name, nodeId, status, comment, docLink, tenderLink, tkpLink, validDeadlineDate]);
   
   // Логируем создание компании - передаем null вместо undefined
   await logCompanyAction(result.insertId, 'create', null, nodeId, null, status, comment, userId);
@@ -108,7 +144,9 @@ export async function addCompany(
     status,
     comment,
     doc_link: docLink,
-    tender_link: tenderLink
+    tender_link: tenderLink,
+    tkp_link: tkpLink,
+    deadline_date: validDeadlineDate
   };
 }
 
@@ -124,6 +162,8 @@ export async function addCompany(
  * @param {number|null} userId - ID пользователя, выполняющего действие
  * @param {string|null} docLink - Ссылка на ТЗ (яндекс/гугл документ)
  * @param {string|null} tenderLink - Ссылка на сайт с тендером
+ * @param {string|null} tkpLink - Ссылка на ТКП в яндекс диске
+ * @param {string|null} deadlineDate - Конечный срок подачи КП
  * @returns {Promise} - Обновленная компания
  */
 export async function updateCompany(
@@ -136,9 +176,18 @@ export async function updateCompany(
   fromStatus?: string,
   userId: number | null = null,
   docLink: string | null = null,
-  tenderLink: string | null = null
+  tenderLink: string | null = null,
+  tkpLink: string | null = null,
+  deadlineDate: string | null = null
 ) {
   try {
+    // Логируем входные параметры
+    console.log('updateCompany параметры:', {
+      id, name, nodeId, status, comment, fromNode, fromStatus, userId, 
+      docLink, tenderLink, tkpLink, deadlineDate, 
+      deadlineDateType: deadlineDate ? typeof deadlineDate : null
+    });
+    
     // Сначала проверяем, существует ли компания
     const checkCompany = await query<any[]>('SELECT * FROM companies WHERE id = ?', [id]);
     
@@ -149,11 +198,36 @@ export async function updateCompany(
     // Обновляем компанию
     const sql = `
       UPDATE companies
-      SET name = ?, node_id = ?, status = ?, comment = ?, doc_link = ?, tender_link = ?
+      SET name = ?, node_id = ?, status = ?, comment = ?, doc_link = ?, tender_link = ?, tkp_link = ?, deadline_date = ?
       WHERE id = ?
     `;
     
-    await query<any>(sql, [name, nodeId, status, comment, docLink, tenderLink, id]);
+    // Преобразуем и валидируем deadline_date
+    let validDeadlineDate = null;
+    if (deadlineDate) {
+      // Проверяем формат даты (должен быть YYYY-MM-DD для MySQL DATE)
+      if (typeof deadlineDate === 'string' && deadlineDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        validDeadlineDate = deadlineDate;
+      } else {
+        console.warn('Некорректный формат даты:', deadlineDate);
+        // Если формат не соответствует, попробуем конвертировать
+        try {
+          const date = new Date(deadlineDate as string);
+          if (!isNaN(date.getTime())) {
+            const year = date.getUTCFullYear();
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            validDeadlineDate = `${year}-${month}-${day}`;
+          }
+        } catch (e) {
+          console.error('Ошибка конвертации даты:', e);
+        }
+      }
+    }
+    
+    console.log('Итоговая дата для SQL:', validDeadlineDate);
+    
+    await query<any>(sql, [name, nodeId, status, comment, docLink, tenderLink, tkpLink, validDeadlineDate, id]);
     
     // Преобразуем undefined в null для MySQL
     const safeFromNode = fromNode === undefined ? null : fromNode;
@@ -173,7 +247,9 @@ export async function updateCompany(
       status,
       comment,
       doc_link: docLink,
-      tender_link: tenderLink
+      tender_link: tenderLink,
+      tkp_link: tkpLink,
+      deadline_date: validDeadlineDate
     };
   } catch (error) {
     console.error('Ошибка обновления компании:', error);

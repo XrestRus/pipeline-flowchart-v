@@ -105,7 +105,23 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, nodeId, status, comment, fromNode, fromStatus, docLink, tenderLink } = body;
+    const { name, nodeId, status, comment, fromNode, fromStatus, docLink, tenderLink, tkpLink, deadlineDate } = body;
+
+    // Логирование полученных данных
+    console.log('Получены данные для обновления компании:', {
+      companyId,
+      name, 
+      nodeId, 
+      status, 
+      comment, 
+      fromNode, 
+      fromStatus, 
+      docLink, 
+      tenderLink, 
+      tkpLink, 
+      deadlineDate,
+      deadlineDateType: deadlineDate ? typeof deadlineDate : null
+    });
 
     // Получаем ID пользователя из токена
     const userId = await getUserFromToken(request);
@@ -124,6 +140,8 @@ export async function PUT(
     const safeComment = comment || '';
     const safeDocLink = docLink || null;
     const safeTenderLink = tenderLink || null;
+    const safeTkpLink = tkpLink || null;
+    const safeDeadlineDate = deadlineDate || null;
 
     const updatedCompany = await db.updateCompany(
       companyId,
@@ -135,7 +153,9 @@ export async function PUT(
       safeFromStatus,
       userId,
       safeDocLink,
-      safeTenderLink
+      safeTenderLink,
+      safeTkpLink,
+      safeDeadlineDate
     );
 
     return NextResponse.json({ success: true, data: updatedCompany });

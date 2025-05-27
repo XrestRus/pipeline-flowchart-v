@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, nodeId, status, comment, docLink, tenderLink } = body;
+    const { name, nodeId, status, comment, docLink, tenderLink, tkpLink, deadlineDate } = body;
     
     // Получаем ID пользователя из токена
     const userId = await getUserFromToken(request);
@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
       comment || '',
       userId,
       docLink || null,
-      tenderLink || null
+      tenderLink || null,
+      tkpLink || null,
+      deadlineDate || null
     );
     
     return NextResponse.json(

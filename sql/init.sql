@@ -10,6 +10,8 @@ CREATE TABLE companies (
     comment TEXT,
     doc_link VARCHAR(500) NULL COMMENT 'Ссылка на ТЗ в яндекс/гугл документе',
     tender_link VARCHAR(500) NULL COMMENT 'Ссылка на сайт с тендером',
+    tkp_link VARCHAR(500) NULL COMMENT 'Ссылка на ТКП в яндекс диске',
+    deadline_date DATE NULL COMMENT 'Конечный срок подачи коммерческого предложения',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL DEFAULT NULL

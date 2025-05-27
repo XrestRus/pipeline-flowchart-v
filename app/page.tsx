@@ -180,6 +180,8 @@ export default function Home() {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: { file: File, description: string }[]
   ) => {
     try {
@@ -189,7 +191,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink, tkpLink, deadlineDate }),
       });
 
       if (!response.ok) {
@@ -248,76 +250,26 @@ export default function Home() {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: { file: File, description: string }[]
   ) => {
-    // Add to the "selected" node by default
-    const nodeId = "selected";
-    const status = "waiting";
+    // Определяем начальный узел
+    const firstNodeId = "selected";
+    const status: "waiting" | "dropped" = "waiting";
 
-    try {
-      // Отправляем запрос на API для сохранения компании в БД
-      const response = await fetch("/api/companies", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add company");
-      }
-
-      // Получаем данные созданной компании, включая ID
-      const responseData = await response.json();
-      const newCompanyId = responseData.data.id;
-
-      // Обновляем локальное состояние React
-      setUserCompanies((prev) => {
-        const nodeData = prev[nodeId] || {
-          waiting: { companies: [] },
-          dropped: { companies: [] },
-        };
-
-        return {
-          ...prev,
-          [nodeId]: {
-            ...nodeData,
-            [status]: {
-              companies: [
-                { id: newCompanyId, name, comment },
-                ...nodeData[status].companies
-              ],
-            },
-          },
-        };
-      });
-
-      // Если есть файлы для загрузки, загружаем их по одному
-      if (filesToUpload && filesToUpload.length > 0) {
-        for (const fileData of filesToUpload) {
-          const formData = new FormData();
-          formData.append('file', fileData.file);
-          formData.append('description', fileData.description);
-
-          try {
-            await fetch(`/api/companies/${newCompanyId}/files`, {
-              method: 'POST',
-              body: formData,
-            });
-          } catch (fileError) {
-            console.error("Error uploading file:", fileError);
-            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
-          }
-        }
-      }
-
-      setIsAddCompanyModalOpen(false);
-    } catch (error) {
-      console.error("Error adding company:", error);
-      // Можно добавить уведомление об ошибке для пользователя
-    }
+    // Вызываем общую функцию добавления
+    await handleAddCompany(
+      firstNodeId,
+      status,
+      name,
+      comment,
+      docLink,
+      tenderLink,
+      tkpLink,
+      deadlineDate,
+      filesToUpload
+    );
   };
 
   const handleUpdateCompany = async (
@@ -328,6 +280,8 @@ export default function Home() {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: { file: File, description: string }[]
   ): Promise<void> => {
     try {
@@ -345,18 +299,44 @@ export default function Home() {
 
       const companyId = company.id;
 
+      // Логирование данных для отладки
+      console.log('handleUpdateCompany params:', {
+        nodeId,
+        status,
+        index,
+        name,
+        comment,
+        docLink,
+        tenderLink,
+        tkpLink,
+        deadlineDate,
+        hasFiles: filesToUpload && filesToUpload.length > 0
+      });
+
       // Отправляем запрос на API для обновления компании в БД
       const response = await fetch(`/api/companies/${companyId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink }),
+        body: JSON.stringify({ name, nodeId, status, comment, docLink, tenderLink, tkpLink, deadlineDate }),
       });
 
+      // Проверяем на ошибки и логируем ответ
+      const responseText = await response.text();
+      console.log('Server response text:', responseText);
+      
+      // Пробуем распарсить ответ как JSON
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+        console.log('Server response parsed:', errorData);
+      } catch (parseError) {
+        console.error('Error parsing server response:', parseError);
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update company");
+        throw new Error((errorData && errorData.error) || "Failed to update company");
       }
 
       // Обновляем локальное состояние React
@@ -494,6 +474,21 @@ export default function Home() {
       const name = companyData.name;
       const comment = companyData.comment;
 
+      // Получаем дополнительные данные о компании
+      const companyResponse = await fetch(`/api/companies/${companyId}`);
+      const companyDetails = await companyResponse.json();
+      let docLink = null;
+      let tenderLink = null;
+      let tkpLink = null;
+      let deadlineDate = null;
+      
+      if (companyResponse.ok && companyDetails.success && companyDetails.data) {
+        docLink = companyDetails.data.doc_link;
+        tenderLink = companyDetails.data.tender_link;
+        tkpLink = companyDetails.data.tkp_link;
+        deadlineDate = companyDetails.data.deadline_date;
+      }
+
       // Отправляем запрос на API для обновления компании в БД
       const response = await fetch(`/api/companies/${companyId}`, {
         method: "PUT",
@@ -507,6 +502,10 @@ export default function Home() {
           comment,
           fromNode: fromNodeId,
           fromStatus,
+          docLink,
+          tenderLink,
+          tkpLink,
+          deadlineDate
         }),
       });
 

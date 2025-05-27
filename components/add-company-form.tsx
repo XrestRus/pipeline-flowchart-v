@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Link, ExternalLink } from "lucide-react"
+import { Link, ExternalLink, FileDigit, Calendar } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CompanyFileUploader from "./CompanyFileUploader"
 
@@ -26,6 +26,8 @@ interface AddCompanyFormProps {
     comment: string,
     docLink?: string | null,
     tenderLink?: string | null,
+    tkpLink?: string | null,
+    deadlineDate?: string | null,
     filesToUpload?: FileToUpload[]
   ) => void
   defaultStatus?: "waiting" | "dropped"
@@ -41,6 +43,8 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
   const [status, setStatus] = useState<"waiting" | "dropped">(defaultStatus)
   const [docLink, setDocLink] = useState<string>("")
   const [tenderLink, setTenderLink] = useState<string>("")
+  const [tkpLink, setTkpLink] = useState<string>("")
+  const [deadlineDate, setDeadlineDate] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("info")
   const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
@@ -73,6 +77,11 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
       setError('Ссылка на тендер некорректна');
       return;
     }
+    
+    if (!isValidUrl(tkpLink)) {
+      setError('Ссылка на ТКП некорректна');
+      return;
+    }
 
     onAddCompany(
       nodeId, 
@@ -81,6 +90,8 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
       comment, 
       docLink.trim() ? docLink.trim() : null, 
       tenderLink.trim() ? tenderLink.trim() : null,
+      tkpLink.trim() ? tkpLink.trim() : null,
+      deadlineDate.trim() ? deadlineDate.trim() : null,
       filesToUpload.length > 0 ? filesToUpload : undefined
     )
 
@@ -89,6 +100,8 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
     setComment("")
     setDocLink("")
     setTenderLink("")
+    setTkpLink("")
+    setDeadlineDate("")
     setFilesToUpload([])
   }
   
@@ -116,6 +129,25 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
               placeholder="Введите название компании"
               required
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="deadline-date">Срок подачи КП</Label>
+            <div className="flex rounded-md shadow-sm">
+              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                <Calendar className="h-4 w-4" />
+              </span>
+              <Input
+                id="deadline-date"
+                type="date"
+                value={deadlineDate}
+                onChange={(e) => setDeadlineDate(e.target.value)}
+                className="rounded-l-none"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Укажите конечный срок подачи коммерческого предложения
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -187,6 +219,25 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
             </p>
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="tkp-link">ТКП Яндекс Диск</Label>
+            <div className="flex rounded-md shadow-sm">
+              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                <FileDigit className="h-4 w-4" />
+              </span>
+              <Input
+                id="tkp-link"
+                value={tkpLink}
+                onChange={(e) => setTkpLink(e.target.value)}
+                placeholder="https://disk.yandex.ru/d/..."
+                className="rounded-l-none"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Укажите ссылку на ТКП в Яндекс Диске
+            </p>
+          </div>
+          
           {/* Предпросмотр ссылок если они заполнены */}
           <div className="mt-4 space-y-2">
             {docLink && (
@@ -213,6 +264,20 @@ export default function AddCompanyForm({ nodeId, onAddCompany, defaultStatus = "
                   className="text-sm text-blue-600 hover:underline"
                 >
                   Открыть страницу тендера в новой вкладке
+                </a>
+              </div>
+            )}
+            
+            {tkpLink && (
+              <div className="flex items-center space-x-2">
+                <FileDigit className="h-4 w-4 text-blue-500" />
+                <a 
+                  href={tkpLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Открыть ТКП в Яндекс Диске
                 </a>
               </div>
             )}

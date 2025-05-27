@@ -5,23 +5,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Link, ExternalLink } from 'lucide-react';
+import { Link, ExternalLink, FileDigit } from 'lucide-react';
 
 interface CompanyLinksManagerProps {
   companyId: number;
   docLink?: string | null;
   tenderLink?: string | null;
-  onUpdate: (docLink: string | null, tenderLink: string | null) => Promise<void>;
+  tkpLink?: string | null;
+  onUpdate: (docLink: string | null, tenderLink: string | null, tkpLink: string | null) => Promise<void>;
 }
 
 export default function CompanyLinksManager({ 
   companyId, 
   docLink: initialDocLink, 
-  tenderLink: initialTenderLink, 
+  tenderLink: initialTenderLink,
+  tkpLink: initialTkpLink,
   onUpdate 
 }: CompanyLinksManagerProps) {
   const [docLink, setDocLink] = useState(initialDocLink || '');
   const [tenderLink, setTenderLink] = useState(initialTenderLink || '');
+  const [tkpLink, setTkpLink] = useState(initialTkpLink || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -30,7 +33,8 @@ export default function CompanyLinksManager({
   useEffect(() => {
     setDocLink(initialDocLink || '');
     setTenderLink(initialTenderLink || '');
-  }, [initialDocLink, initialTenderLink]);
+    setTkpLink(initialTkpLink || '');
+  }, [initialDocLink, initialTenderLink, initialTkpLink]);
 
   // Валидация URL
   const isValidUrl = (url: string) => {
@@ -59,6 +63,11 @@ export default function CompanyLinksManager({
       return;
     }
     
+    if (!isValidUrl(tkpLink)) {
+      setError('Ссылка на ТКП некорректна');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -67,7 +76,8 @@ export default function CompanyLinksManager({
       // Передаем null вместо пустой строки
       await onUpdate(
         docLink.trim() ? docLink.trim() : null, 
-        tenderLink.trim() ? tenderLink.trim() : null
+        tenderLink.trim() ? tenderLink.trim() : null,
+        tkpLink.trim() ? tkpLink.trim() : null
       );
       
       setSuccess('Ссылки успешно сохранены');
@@ -134,6 +144,28 @@ export default function CompanyLinksManager({
           </p>
         </div>
         
+        <div>
+          <label htmlFor="tkp-link" className="block text-sm font-medium text-gray-700 mb-1">
+            ТКП Яндекс Диск
+          </label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+              <FileDigit className="h-4 w-4" />
+            </span>
+            <input
+              type="text"
+              id="tkp-link"
+              value={tkpLink}
+              onChange={(e) => setTkpLink(e.target.value)}
+              className="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-none rounded-r-md border-gray-300 p-2 border"
+              placeholder="https://disk.yandex.ru/d/..."
+            />
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Укажите ссылку на ТКП в Яндекс Диске
+          </p>
+        </div>
+        
         <div className="flex justify-end">
           <button
             type="submit"
@@ -183,6 +215,20 @@ export default function CompanyLinksManager({
               className="text-sm text-blue-600 hover:underline"
             >
               Открыть страницу тендера в новой вкладке
+            </a>
+          </div>
+        )}
+        
+        {tkpLink && (
+          <div className="flex items-center space-x-2">
+            <FileDigit className="h-4 w-4 text-blue-500" />
+            <a 
+              href={tkpLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Открыть ТКП в Яндекс Диске
             </a>
           </div>
         )}

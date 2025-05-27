@@ -3,6 +3,7 @@ import "./globals.css"
 import type { Metadata } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import NavBar from "@/components/NavBar"
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
   title: "Проектный Пайплайн",
@@ -23,6 +24,7 @@ export default function RootLayout({
           <main className="pt-16">
             {children}
           </main>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

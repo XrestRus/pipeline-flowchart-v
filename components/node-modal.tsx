@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Save, X, Trash, ArrowDown, ArrowUp, ArrowRight, ExternalLink, History } from "lucide-react"
+import { Trash, ArrowDown, ArrowUp, ArrowRight, ExternalLink, History } from "lucide-react"
 import CompanyDetailsModal from "./company-details-modal"
 import Link from "next/link"
 
@@ -15,6 +13,7 @@ interface CompanyWithId {
   id: number;
   name: string;
   comment: string;
+  deadline_date?: string | null;
 }
 
 // Интерфейс для выбранной компании
@@ -24,6 +23,131 @@ interface SelectedCompany {
   comment: string;
   status: "waiting" | "dropped";
   index: number; // Индекс компании обязателен
+  deadline_date?: string | null;
+}
+
+// Интерфейс для содержимого таблицы
+interface TableContentProps {
+  status: "waiting" | "dropped";
+  companies: CompanyWithId[];
+  deadlineDates: Record<number, string | null>;
+  formatDate: (dateString: string | null | undefined) => string;
+  handleOpenCompanyDetails: (index: number, status: "waiting" | "dropped") => void;
+  handleDelete: (status: "waiting" | "dropped", index: number) => void;
+  handleStatusChange: (status: "waiting" | "dropped", index: number) => void;
+  handleMoveToNextNode?: (status: "waiting" | "dropped", index: number, nextNodeId: string) => void;
+  nextNodes?: string[];
+  getNodeTitle?: (nodeId: string) => string;
+}
+
+// Компонент для отображения содержимого таблицы
+function TableContent({
+  status,
+  companies,
+  deadlineDates,
+  formatDate,
+  handleOpenCompanyDetails,
+  handleDelete,
+  handleStatusChange,
+  handleMoveToNextNode,
+  nextNodes = [],
+  getNodeTitle = (id) => id
+}: TableContentProps) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Компания</TableHead>
+          <TableHead>Комментарий</TableHead>
+          <TableHead>Срок подачи КП</TableHead>
+          <TableHead className="w-[220px]">Действия</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {companies.map((company, index) => {
+          const comment = company.comment || "";
+
+          return (
+            <TableRow key={`${status}-${index}`}>
+              <TableCell>{company.name}</TableCell>
+              <TableCell>{comment}</TableCell>
+              <TableCell>{formatDate(deadlineDates[company.id])}</TableCell>
+              <TableCell>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleOpenCompanyDetails(index, status)}
+                    title="Полное редактирование"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Link href={`/company-history?id=${company.id}&name=${encodeURIComponent(company.name)}`} passHref>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      title="История изменений"
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDelete(status, index)}
+                    title="Удалить"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleStatusChange(status, index)}
+                    title={status === "waiting" ? "Переместить в Выбыли" : "Переместить в Ожидает"}
+                  >
+                    {status === "waiting" ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
+                  </Button>
+                  {status === "waiting" && nextNodes && nextNodes.length > 0 && (
+                    <div className="relative group">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={nextNodes.length === 1 && handleMoveToNextNode ?
+                          () => handleMoveToNextNode(status, index, nextNodes[0]) :
+                          undefined}
+                        title={
+                          nextNodes.length === 1
+                            ? `Переместить на этап "${getNodeTitle(nextNodes[0])}"`
+                            : "Переместить на следующий этап"
+                        }
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                      {nextNodes.length > 1 && handleMoveToNextNode && (
+                        <div className="absolute right-0 top-9 mt-1 bg-white dark:bg-black shadow-md rounded-md p-1 hidden group-hover:block z-10">
+                          {nextNodes.map((nextNodeId) => (
+                            <Button
+                              key={nextNodeId}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                              onClick={() => handleMoveToNextNode(status, index, nextNodeId)}
+                            >
+                              {getNodeTitle(nextNodeId)}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
 }
 
 interface NodeModalProps {
@@ -84,16 +208,10 @@ export default function NodeModal({
   onMoveCompany,
   getNextNodes,
 }: NodeModalProps) {
-  const [editingRow, setEditingRow] = useState<{
-    index: number
-    status: "waiting" | "dropped"
-    company: string
-    comment: string
-  } | null>(null)
-
   const [activeTab, setActiveTab] = useState<"waiting" | "dropped">("waiting")
   const [companyDetailsModalOpen, setCompanyDetailsModalOpen] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<SelectedCompany | null>(null)
+  const [deadlineDates, setDeadlineDates] = useState<Record<number, string | null>>({})
 
   if (!nodeId) return null
 
@@ -102,38 +220,60 @@ export default function NodeModal({
     dropped: { companies: [] },
   }
 
-  const mergedData = {
+  // Используем useMemo для предотвращения создания нового объекта при каждом рендере
+  const mergedData = useMemo(() => ({
     waiting: {
-      companies: [...userData.waiting.companies],
+      companies: [...(userData.waiting.companies || [])],
     },
     dropped: {
-      companies: [...userData.dropped.companies],
+      companies: [...(userData.dropped.companies || [])],
     },
-  }
+  }), [userData]);
 
-  const handleEdit = (index: number, status: "waiting" | "dropped", company: string, comment: string) => {
-    setEditingRow({ index, status, company, comment })
-  }
-
-  const handleSave = () => {
-    if (editingRow && nodeId) {
-      onUpdateCompany(nodeId, editingRow.status, editingRow.index, editingRow.company, editingRow.comment, null, null, null, null)
-      setEditingRow(null)
+  // Функция для форматирования даты
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU');
+    } catch {
+      return dateString || "-";
     }
-  }
+  };
 
-  const handleCancel = () => {
-    setEditingRow(null)
-  }
+  // Загрузка дат для компаний текущего узла
+  useEffect(() => {
+    const fetchCompanyDates = async () => {
+      const dates: Record<number, string | null> = {};
 
-  const handleChange = (field: "company" | "comment", value: string) => {
-    if (editingRow) {
-      setEditingRow({
-        ...editingRow,
-        [field]: value,
-      })
+      // Собираем все ID компаний в текущем узле
+      const companyIds = [
+        ...(userData.waiting.companies || []).map(c => c.id),
+        ...(userData.dropped.companies || []).map(c => c.id)
+      ];
+
+      // Запрашиваем данные для каждой компании
+      for (const id of companyIds) {
+        try {
+          const response = await fetch(`/api/companies/${id}`);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              dates[id] = result.data.deadline_date;
+            }
+          }
+        } catch (error) {
+          console.error(`Ошибка получения данных для компании ${id}:`, error);
+        }
+      }
+
+      setDeadlineDates(dates);
+    };
+
+    if (isOpen && nodeId) {
+      fetchCompanyDates();
     }
-  }
+  }, [isOpen, nodeId, userData]); // Заменяем mergedData на userData
 
   const handleDelete = (status: "waiting" | "dropped", index: number) => {
     if (nodeId) {
@@ -162,7 +302,8 @@ export default function NodeModal({
         name: company.name,
         comment: company.comment,
         status,
-        index
+        index,
+        deadline_date: deadlineDates[company.id]
       });
       setCompanyDetailsModalOpen(true);
     }
@@ -194,140 +335,18 @@ export default function NodeModal({
             </TabsList>
 
             <TabsContent value="waiting" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Компания</TableHead>
-                    <TableHead>Комментарий</TableHead>
-                    <TableHead className="w-[220px]">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mergedData.waiting.companies.map((company, index) => {
-                    const comment = company.comment || ""
-                    const isEditing = editingRow?.status === "waiting" && editingRow?.index === index
-
-                    return (
-                      <TableRow key={`waiting-${index}`}>
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              value={editingRow.company}
-                              onChange={(e) => handleChange("company", e.target.value)}
-                              className="w-full"
-                            />
-                          ) : (
-                            company.name
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Textarea
-                              value={editingRow.comment}
-                              onChange={(e) => handleChange("comment", e.target.value)}
-                              className="w-full"
-                              rows={2}
-                            />
-                          ) : (
-                            comment
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1">
-                            {isEditing ? (
-                              <>
-                                <Button variant="outline" size="icon" onClick={handleSave} title="Сохранить">
-                                  <Save className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={handleCancel} title="Отменить">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleEdit(index, "waiting", company.name, comment)}
-                                  title="Быстрое редактирование"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleOpenCompanyDetails(index, "waiting")}
-                                  title="Полное редактирование"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                                <Link href={`/company-history?id=${company.id}&name=${encodeURIComponent(company.name)}`} passHref>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    title="История изменений"
-                                  >
-                                    <History className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleDelete("waiting", index)}
-                                  title="Удалить"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleStatusChange("waiting", index)}
-                                  title="Переместить в Выбыли"
-                                >
-                                  <ArrowDown className="h-4 w-4" />
-                                </Button>
-                                {nextNodes.length > 0 && (
-                                  <div className="relative group">
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={nextNodes.length === 1 ?
-                                        () => handleMoveToNextNode("waiting", index, nextNodes[0]) :
-                                        undefined}
-                                      title={
-                                        nextNodes.length === 1
-                                          ? `Переместить на этап "${getNodeTitle(nextNodes[0])}"`
-                                          : "Переместить на следующий этап"
-                                      }
-                                    >
-                                      <ArrowRight className="h-4 w-4" />
-                                    </Button>
-                                    {nextNodes.length > 1 && (
-                                      <div className="absolute right-0 top-9 mt-1 bg-white dark:bg-black shadow-md rounded-md p-1 hidden group-hover:block z-10">
-                                        {nextNodes.map((nextNodeId) => (
-                                          <Button
-                                            key={nextNodeId}
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full justify-start"
-                                            onClick={() => handleMoveToNextNode("waiting", index, nextNodeId)}
-                                          >
-                                            {getNodeTitle(nextNodeId)}
-                                          </Button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <TableContent
+                status="waiting"
+                companies={mergedData.waiting.companies}
+                deadlineDates={deadlineDates}
+                formatDate={formatDate}
+                handleOpenCompanyDetails={handleOpenCompanyDetails}
+                handleDelete={handleDelete}
+                handleStatusChange={handleStatusChange}
+                handleMoveToNextNode={handleMoveToNextNode}
+                nextNodes={nextNodes}
+                getNodeTitle={getNodeTitle}
+              />
 
               {mergedData.waiting.companies.length === 0 && (
                 <div className="py-24 text-center text-gray-500">
@@ -337,107 +356,15 @@ export default function NodeModal({
             </TabsContent>
 
             <TabsContent value="dropped" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Компания</TableHead>
-                    <TableHead>Комментарий</TableHead>
-                    <TableHead className="w-[220px]">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mergedData.dropped.companies.map((company, index) => {
-                    const comment = company.comment || ""
-                    const isEditing = editingRow?.status === "dropped" && editingRow?.index === index
-
-                    return (
-                      <TableRow key={`dropped-${index}`}>
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              value={editingRow.company}
-                              onChange={(e) => handleChange("company", e.target.value)}
-                              className="w-full"
-                            />
-                          ) : (
-                            company.name
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Textarea
-                              value={editingRow.comment}
-                              onChange={(e) => handleChange("comment", e.target.value)}
-                              className="w-full"
-                              rows={2}
-                            />
-                          ) : (
-                            comment
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1">
-                            {isEditing ? (
-                              <>
-                                <Button variant="outline" size="icon" onClick={handleSave} title="Сохранить">
-                                  <Save className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={handleCancel} title="Отменить">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleEdit(index, "dropped", company.name, comment)}
-                                  title="Быстрое редактирование"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleOpenCompanyDetails(index, "dropped")}
-                                  title="Полное редактирование"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                                <Link href={`/company-history?id=${company.id}&name=${encodeURIComponent(company.name)}`} passHref>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    title="История изменений"
-                                  >
-                                    <History className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleDelete("dropped", index)}
-                                  title="Удалить"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleStatusChange("dropped", index)}
-                                  title="Переместить в Ожидает"
-                                >
-                                  <ArrowUp className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <TableContent
+                status="dropped"
+                companies={mergedData.dropped.companies}
+                deadlineDates={deadlineDates}
+                formatDate={formatDate}
+                handleOpenCompanyDetails={handleOpenCompanyDetails}
+                handleDelete={handleDelete}
+                handleStatusChange={handleStatusChange}
+              />
 
               {mergedData.dropped.companies.length === 0 && (
                 <div className="py-24 text-center text-gray-500">

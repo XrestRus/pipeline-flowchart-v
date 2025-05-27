@@ -34,8 +34,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`Попытка входа пользователя: ${username}`);
-
     // Получаем пользователя из базы данных
     const user = await getUserByUsername(username);
 
@@ -59,8 +57,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`Успешный вход пользователя: ${username}, ID: ${user.id}, роль: ${user.role}`);
-
     // Обновляем время последнего входа
     await updateUserLastLogin(user.id);
 
@@ -83,8 +79,6 @@ export async function POST(request: Request) {
       sameSite: 'lax', // Стандартный вариант для большинства случаев
       maxAge: 60 * 60 * 24 * 10, // 10 дней в секундах
     });
-
-    console.log('Установлены куки авторизации');
 
     return response;
   } catch (error) {

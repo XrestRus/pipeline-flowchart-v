@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { Trash, Upload, FileIcon, FileText, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface File {
   id: number;
@@ -143,9 +144,12 @@ export default function CompanyFilesManager({ companyId }: CompanyFilesManagerPr
 
       // Обновляем список файлов
       fetchFiles();
+      toast.success(`Файл "${file.name}" успешно загружен`);
     } catch (error: any) {
       console.error('Ошибка загрузки файла:', error);
-      setError(error.message || 'Не удалось загрузить файл. Попробуйте позже.');
+      const errorMessage = error.message || 'Не удалось загрузить файл. Попробуйте позже.';
+      setError(errorMessage);
+      toast.error(`Ошибка загрузки файла: ${errorMessage}`);
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
@@ -172,9 +176,12 @@ export default function CompanyFilesManager({ companyId }: CompanyFilesManagerPr
 
       // Обновляем список файлов
       fetchFiles();
+      toast.success('Файл успешно удален');
     } catch (error) {
       console.error('Ошибка удаления файла:', error);
-      setError('Не удалось удалить файл. Попробуйте позже.');
+      const errorMessage = 'Не удалось удалить файл. Попробуйте позже.';
+      setError(errorMessage);
+      toast.error(`Ошибка удаления файла: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }

@@ -107,22 +107,6 @@ export async function PUT(
     const body = await request.json();
     const { name, nodeId, status, comment, fromNode, fromStatus, docLink, tenderLink, tkpLink, deadlineDate } = body;
 
-    // Логирование полученных данных
-    console.log('Получены данные для обновления компании:', {
-      companyId,
-      name, 
-      nodeId, 
-      status, 
-      comment, 
-      fromNode, 
-      fromStatus, 
-      docLink, 
-      tenderLink, 
-      tkpLink, 
-      deadlineDate,
-      deadlineDateType: deadlineDate ? typeof deadlineDate : null
-    });
-
     // Получаем ID пользователя из токена
     const userId = await getUserFromToken(request);
 

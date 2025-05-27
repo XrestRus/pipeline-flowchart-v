@@ -171,16 +171,6 @@ export default function NavBar() {
                 <span className="text-sm">Загрузка...</span>
               ) : user ? (
                 <div className="flex items-center space-x-4">
-                  {isAdmin && (
-                    <Button
-                      onClick={() => router.push('/admin/users')}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" /> Управление пользователями
-                    </Button>
-                  )}
                   <Button
                     onClick={handleAddCompanyClick}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700"

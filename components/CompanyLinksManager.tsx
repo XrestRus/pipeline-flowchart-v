@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, ExternalLink, FileDigit } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CompanyLinksManagerProps {
   companyId: number;
@@ -80,16 +81,13 @@ export default function CompanyLinksManager({
         tkpLink.trim() ? tkpLink.trim() : null
       );
       
-      setSuccess('Ссылки успешно сохранены');
-      
-      // Скрываем сообщение об успехе через 3 секунды
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
+      // Уведомление будет показано в родительском компоненте
       
     } catch (error: any) {
       console.error('Ошибка сохранения ссылок:', error);
-      setError(error.message || 'Не удалось сохранить ссылки. Попробуйте позже.');
+      const errorMessage = error.message || 'Не удалось сохранить ссылки. Попробуйте позже.';
+      setError(errorMessage);
+      // Уведомление об ошибке будет показано в родительском компоненте
     } finally {
       setIsLoading(false);
     }

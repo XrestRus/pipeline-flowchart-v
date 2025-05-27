@@ -60,8 +60,6 @@ function LoginForm() {
       const loginEvent = new Event('user-login-success');
       window.dispatchEvent(loginEvent);
 
-      console.log('Авторизация успешна, перенаправление на:', returnUrl);
-      
       // Используем непосредственное перенаправление вместо Next.js роутера
       // в режиме инкогнито это работает более надежно
       setTimeout(() => {

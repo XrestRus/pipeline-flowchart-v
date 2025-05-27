@@ -7,6 +7,7 @@ import CustomFlowchart from "@/components/custom-flowchart";
 import NodeModal from "@/components/node-modal";
 import AddCompanyModal from "@/components/add-company-modal";
 import { useAddCompanyModalListener } from "@/hooks/useAddCompanyModal";
+import { toast } from "sonner";
 
 // Расширяем тип данных для хранения ID компаний
 interface CompanyWithId {
@@ -235,13 +236,15 @@ export default function Home() {
             });
           } catch (fileError) {
             console.error("Error uploading file:", fileError);
-            // Продолжаем загрузку остальных файлов даже если один из них не удалось загрузить
+            toast.error(`Ошибка загрузки файла: ${fileData.file.name}`);
           }
         }
       }
+
+      toast.success(`Компания "${name}" успешно добавлена`);
     } catch (error) {
       console.error("Error adding company:", error);
-      // Можно добавить уведомление об ошибке для пользователя
+      toast.error(`Ошибка добавления компании: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   };
 
@@ -299,20 +302,6 @@ export default function Home() {
 
       const companyId = company.id;
 
-      // Логирование данных для отладки
-      console.log('handleUpdateCompany params:', {
-        nodeId,
-        status,
-        index,
-        name,
-        comment,
-        docLink,
-        tenderLink,
-        tkpLink,
-        deadlineDate,
-        hasFiles: filesToUpload && filesToUpload.length > 0
-      });
-
       // Отправляем запрос на API для обновления компании в БД
       const response = await fetch(`/api/companies/${companyId}`, {
         method: "PUT",
@@ -324,13 +313,11 @@ export default function Home() {
 
       // Проверяем на ошибки и логируем ответ
       const responseText = await response.text();
-      console.log('Server response text:', responseText);
-      
+
       // Пробуем распарсить ответ как JSON
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-        console.log('Server response parsed:', errorData);
       } catch (parseError) {
         console.error('Error parsing server response:', parseError);
       }
@@ -387,7 +374,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error updating company:", error);
-      // Можно добавить уведомление об ошибке для пользователя
+      toast.error(`Ошибка обновления компании: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
       throw error; // Пробрасываем ошибку дальше, чтобы она была обработана в модальном окне
     }
   };
@@ -447,9 +434,11 @@ export default function Home() {
 
         return newState;
       });
+
+      toast.success(`Компания "${company.name}" успешно удалена`);
     } catch (error) {
       console.error("Error deleting company:", error);
-      // Можно добавить уведомление об ошибке для пользователя
+      toast.error(`Ошибка удаления компании: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   };
 
@@ -481,7 +470,7 @@ export default function Home() {
       let tenderLink = null;
       let tkpLink = null;
       let deadlineDate = null;
-      
+
       if (companyResponse.ok && companyDetails.success && companyDetails.data) {
         docLink = companyDetails.data.doc_link;
         tenderLink = companyDetails.data.tender_link;
@@ -575,9 +564,22 @@ export default function Home() {
 
         return newState;
       });
+
+      // Определяем тип операции для уведомления
+      const fromNodeTitle = getNodeTitle(fromNodeId);
+      const toNodeTitle = getNodeTitle(toNodeId);
+
+      if (fromNodeId === toNodeId) {
+        // Изменение статуса внутри узла
+        const statusText = toStatus === "waiting" ? "Ожидает" : "Выбыли";
+        toast.success(`Компания "${name}" перемещена в статус "${statusText}"`);
+      } else {
+        // Перемещение между узлами
+        toast.success(`Компания "${name}" перемещена из "${fromNodeTitle}" в "${toNodeTitle}"`);
+      }
     } catch (error) {
       console.error("Error moving company:", error);
-      // Можно добавить уведомление об ошибке для пользователя
+      toast.error(`Ошибка перемещения компании: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   };
 
